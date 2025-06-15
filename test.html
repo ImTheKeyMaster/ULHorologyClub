@@ -174,6 +174,10 @@
       margin: 0 auto 40px;
     }
 
+    .cards {
+      /* mobile/default: full‑width stacked */
+    }
+
     .cards .card {
       padding: 60px 20px;
     }
@@ -237,6 +241,23 @@
       /* Offset the nav (and hamburger) inward by hamburger width (30px) */
       nav {
         right: 30px;
+      }
+
+      /* Desktop grid for cards */
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      /* Uniform image sizing */
+      .card img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        margin-bottom: 16px;
       }
     }
   </style>
