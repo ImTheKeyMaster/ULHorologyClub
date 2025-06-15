@@ -1,3 +1,10 @@
+Below is the complete page with the hamburger menu removed and the nav links always visible in the top right. I’ve:
+
+* Stripped out all `.hamburger` markup, CSS, and JS.
+* Displayed the nav links inline with a small gap.
+* Kept the fixed‐background, scrolling overlay, and overlapping features intact.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,62 +32,17 @@
       background: rgba(0,0,0,0.5);
     }
 
-    /* NAVIGATION */
+    /* NAVIGATION – always visible links */
     nav {
       position: fixed;
-      top: 0; right: 0;
-      padding: 20px;
+      top: 20px; right: 20px;
       z-index: 1001;
-      background: transparent;
     }
-    .hamburger {
-      width: 30px;
-      height: 24px;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      cursor: pointer;
-    }
-    .hamburger span {
-      background: #C4A675;
-      height: 3px;
-      width: 100%;
-      border-radius: 2px;
-      transition: transform 0.3s ease, opacity 0.3s ease;
-      position: absolute;
-    }
-    .hamburger span:nth-child(1) { top: 0; }
-    .hamburger span:nth-child(2) { top: 10px; }
-    .hamburger span:nth-child(3) { top: 20px; }
-    .hamburger.open span:nth-child(1) {
-      transform: rotate(45deg) translateY(10px);
-    }
-    .hamburger.open span:nth-child(2) {
-      opacity: 0;
-    }
-    .hamburger.open span:nth-child(3) {
-      transform: rotate(-45deg) translateY(-10px);
-    }
-    ul.nav-links {
-      position: absolute;
-      top: 60px; right: 20px;
-      background: rgba(0,0,0,0.9);
-      padding: 16px;
-      border-radius: 4px;
-      list-style: none;
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-    }
-    ul.nav-links.show {
-      display: flex;
-    }
-    ul.nav-links li a {
-      text-decoration: none;
+    nav a {
       color: #C4A675;
+      text-decoration: none;
       font-weight: bold;
-      white-space: nowrap;
+      margin-left: 20px;
     }
 
     /* OVERLAY CONTENT */
@@ -156,6 +118,7 @@
       #hero-text { margin-top:80px; }
       .cards { display:block; }
       .card { margin-bottom:20px; }
+      nav a { margin-left: 12px; font-size: 0.9rem; }
     }
     @media (orientation:landscape) and (max-height:500px) {
       .logo-overlay img { height:80px; }
@@ -164,7 +127,6 @@
     }
     @media (min-width:1024px) {
       .logo-overlay img { height:200px; }
-      nav { right:30px; }
     }
   </style>
 </head>
@@ -173,16 +135,11 @@
   <!-- fixed-bg layer -->
   <div id="bg"></div>
 
-  <!-- nav -->
+  <!-- simplified nav -->
   <nav>
-    <div class="hamburger" id="hamburger">
-      <span></span><span></span><span></span>
-    </div>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="https://member.unionleague.org/…">Join Now</a></li>
-      <li><a href="https://www.watchreport.org">Watch News</a></li>
-      <li><a href="…Bylaws%20-%202025.pdf">Bylaws</a></li>
-    </ul>
+    <a href="https://member.unionleague.org/members/member-events/affinity-clubs/the-union-league-horology-club" target="_blank">Join Now</a>
+    <a href="https://www.watchreport.org" target="_blank">Watch News</a>
+    <a href="https://www.watchreport.org/Horology%20Club%20-%20Bylaws%20-%202025.pdf" target="_blank">Bylaws</a>
   </nav>
 
   <!-- scrolling overlay content -->
@@ -193,14 +150,45 @@
     <div id="hero-text">
       <h1>The Union League<br>Horology Club</h1>
       <p>At the Union League Horology Club, we celebrate a shared passion for exceptional watchmaking. Our community brings together enthusiasts — from seasoned collectors to those just beginning their journey — to enjoy and explore the art, science, and history of fine timepieces.</p>
-      <a href="#" class="cta-button">Join Now</a>
+      <a href="https://member.unionleague.org/members/member-events/affinity-clubs/the-union-league-horology-club" class="cta-button">Join Now</a>
     </div>
   </div>
 
   <!-- features that cover the background -->
   <section id="features">
     <div class="cards">
-      <!-- your .card blocks here -->
+      <div class="card">
+        <img src="/images/hamiltonad.jpg" alt="">
+        <h3>Discover Horological Heritage</h3>
+        <p>Delve into the art, science, and history behind the world’s most celebrated timepieces.</p>
+      </div>
+      <div class="card">
+        <img src="/images/card2.jpg" alt="">
+        <h3>Learn and Share</h3>
+        <p>Expert-led talks, hands‑on demonstrations, and peer-to-peer discussions.</p>
+      </div>
+      <div class="card">
+        <img src="/images/card3.jpg" alt="">
+        <h3>Connect with Fellow Enthusiasts</h3>
+        <p>Exclusive member events — brand ambassadors, Q&As, and themed social evenings.</p>
+      </div>
+      <div class="card">
+        <img src="/images/card4.jpg" alt="">
+        <h3>Access Unique Opportunities</h3>
+        <p>Priority invitations to previews, private showings, and watchmaking lessons.</p>
+      </div>
+      <div class="card">
+        <img src="/images/card5.jpg" alt="">
+        <h3>Latest Watch News</h3>
+        <p>Stay current with trends, releases, and expert insights delivered daily.</p>
+        <a href="https://www.watchreport.org" class="cta-button">Watch News</a>
+      </div>
+      <div class="card">
+        <img src="/images/card6.jpg" alt="">
+        <h3>Join Us</h3>
+        <p>Celebrate the precision, passion, and prestige of fine watchmaking—together.</p>
+        <a href="https://member.unionleague.org/members/member-events/affinity-clubs/the-union-league-horology-club" class="cta-button">Join Now</a>
+      </div>
     </div>
   </section>
 
@@ -209,13 +197,6 @@
     &copy; 2025 The Union League Horology Club. All rights reserved.
   </footer>
 
-  <script>
-    const hamburger = document.getElementById('hamburger');
-    const navLinks = document.getElementById('navLinks');
-    hamburger.addEventListener('click', () => {
-      hamburger.classList.toggle('open');
-      navLinks.classList.toggle('show');
-    });
-  </script>
 </body>
 </html>
+```
