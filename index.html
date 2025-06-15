@@ -133,6 +133,14 @@
       z-index: -1;
     }
 
+    /* apply shadow to all overlay text */
+    #hero .overlay h1,
+    #hero .overlay p {
+      /* text-shadow: offset‑x offset‑y blur‑radius color */
+      text-shadow:
+        0 0 8px rgba(0,0,0,0.8),
+        0 0 16px rgba(0,0,0,0.6);
+    }
     .logo-overlay {
       position: absolute;
       top: 20px;
