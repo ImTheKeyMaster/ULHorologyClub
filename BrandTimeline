@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Watch Brand Timeline</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Helvetica Neue', sans-serif;
+      background-color: #f7f7f7;
+      overflow-x: hidden;
+    }
+
+    .scroll-container {
+      width: 100vw;
+      height: 100vh;
+      overflow-x: auto;
+      overflow-y: hidden;
+      display: flex;
+      align-items: center;
+      background-color: #f7f7f7;
+      scroll-behavior: smooth;
+    }
+
+    .scroll-container img {
+      height: 90vh;
+      width: auto;
+      display: block;
+      padding: 5vh;
+    }
+
+    /* Stylized Scrollbar for WebKit (Chrome, Edge, Safari) */
+    .scroll-container::-webkit-scrollbar {
+      height: 12px;
+    }
+
+    .scroll-container::-webkit-scrollbar-track {
+      background: #e0e0e0;
+      border-radius: 6px;
+    }
+
+    .scroll-container::-webkit-scrollbar-thumb {
+      background-color: #c4a675;
+      border-radius: 6px;
+      border: 2px solid #e0e0e0;
+    }
+
+    .scroll-container::-webkit-scrollbar-thumb:hover {
+      background-color: #a38c5f;
+    }
+
+    /* Stylized Scrollbar for Firefox */
+    .scroll-container {
+      scrollbar-width: thin;
+      scrollbar-color: #c4a675 #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="scroll-container">
+    <img src="/images/Watch Brand Timeline.png" alt="Watch Brand Timeline">
+  </div>
+
+</body>
+</html>
