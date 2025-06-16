@@ -86,8 +86,8 @@
     #features {
       position: relative;
       z-index: 1;
-      margin-top: -100px;    /* pull up over hero-content */
-      padding-top: 100px;    /* compensate so content isn’t cut */
+      margin-top: 0px;    /* pull up over hero-content */
+      padding-top: 0px;    /* compensate so content isn’t cut */
       padding: 60px 20px;
       text-align: center;
     }
@@ -193,6 +193,11 @@
   <footer>
     &copy; 2025 The Union League Horology Club. All rights reserved.
   </footer>
-
+ <script>
+    function scrollToFeatures() {
+      const heroHeight = document.getElementById('hero-content').offsetHeight;
+      window.scrollTo({ top: heroHeight, behavior: 'smooth' });
+    }
+  </script>
 </body>
 </html>
