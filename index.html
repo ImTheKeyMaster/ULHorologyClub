@@ -63,7 +63,7 @@
    /* THE SCROLL ARROW */
     .scroll-to-content {
       position: absolute;
-      bottom: 32px;
+      bottom: calc(32px + env(safe-area-inset-bottom));
       left: 50%;
       transform: translateX(-50%);
       cursor: pointer;
