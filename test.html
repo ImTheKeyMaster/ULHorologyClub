@@ -15,7 +15,8 @@
     #bg {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: url('/images/Background2.png') center/cover no-repeat fixed;
+      /* add a solid black fallback before the image loads */
+      background: #000 url('/images/Background2.png') center/cover no-repeat fixed;
       z-index: 0;
     }
     #bg::before {
@@ -58,12 +59,12 @@
       background:#C4A675; color:#fff;
       padding:12px 24px; border-radius:4px;
       text-decoration:none; font-weight:bold;
+      margin-top: auto;
     }
-
-    /* THE SCROLL ARROW */
+   /* THE SCROLL ARROW */
     .scroll-to-content {
       position: absolute;
-      bottom: 32px;
+      bottom:  calc(96px + env(safe-area-inset-bottom)); 
       left: 50%;
       transform: translateX(-50%);
       cursor: pointer;
@@ -75,27 +76,20 @@
       border-right: 3px solid #fff;
       border-bottom: 3px solid #fff;
       transform: rotate(45deg);
-      animation: arrow-bounce 1.5s infinite;
+      animation: arrow-strobe 2s infinite;
     }
-    @keyframes arrow-bounce {
-      0%,20%,50%,80%,100% {
-        transform: translateX(-50%) translateY(0) rotate(45deg);
-      }
-      40% {
-        transform: translateX(-50%) translateY(6px) rotate(45deg);
-      }
-      60% {
-        transform: translateX(-50%) translateY(4px) rotate(45deg);
-      }
+    @keyframes arrow-strobe {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.3; }
     }
-
+    
     /* FEATURES ON TOP */
     #features {
       position: relative;
       z-index: 1;
-      margin-top: -100px;  /* pull up over hero-content */
-      padding-top: 100px;  /* compensate so content isn’t cut */
-      padding: 100px 20px;
+      margin-top: 0px;    /* pull up over hero-content */
+      padding-top: 0px;    /* compensate so content isn’t cut */
+      padding: 60px 20px;
       text-align: center;
     }
     .cards {
@@ -105,12 +99,22 @@
       max-width:1200px; margin:0 auto;
     }
     .card {
-      background:#fff; padding:40px 20px;
-      display:flex; flex-direction:column;
+      position: relative;   /* add this */
+      background: #fff;
+      padding: 40px 20px 60px; /* extra bottom padding so content doesn’t overlap the button */
+      display: flex;
+      flex-direction: column;
     }
-    .card:nth-child(even) { background:#f3f3f3; }
+    .card .cta-button {
+      position: absolute;
+      bottom: 10px;         /* 10px from the bottom of the card */
+      left: 20px;           /* match your card’s horizontal padding */
+      right: 20px;          /* optional—if you want it to stretch or center */
+      margin: 0 auto;       /* center if you set a width */
+    }
+    /* .card:nth-child(even) { background:#f3f3f3; } */
     .card img {
-      width:100%; height:200px; object-fit:cover;
+      width:100%; height:290px; object-fit:cover;
       margin-bottom:16px;
     }
     .card h3 { font-size:1.5rem; margin-bottom:10px; }
@@ -143,7 +147,7 @@
   <!-- fixed-bg layer -->
   <div id="bg"></div>
 
-  <!-- overlay content -->
+  <!-- scrolling overlay content -->
   <div id="hero-content">
     <div class="logo-overlay">
       <img src="/images/ULHC Logo - Tight Crop.png" alt="Logo">
@@ -151,11 +155,9 @@
     <div id="hero-text">
       <h1>The Union League<br>Horology Club</h1>
       <p>At the Union League Horology Club, we celebrate a shared passion for exceptional watchmaking. Our community brings together enthusiasts — from seasoned collectors to those just beginning their journey — to enjoy and explore the art, science, and history of fine timepieces.</p>
-      <a href="#" class="cta-button">Join Now</a>
+      <a href="https://member.unionleague.org/members/member-events/affinity-clubs/the-union-league-horology-club" target="_blank" class="cta-button">Join Now</a>
     </div>
-
-    <!-- scroll‑to‑content arrow -->
-    <div class="scroll-to-content" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">
+    <div class="scroll-to-content" onclick="scrollToFeatures()">
       <div class="arrow"></div>
     </div>
   </div>
@@ -193,7 +195,7 @@
         <img src="/images/card6.jpg" alt="">
         <h3>Join Us</h3>
         <p>Celebrate the precision, passion, and prestige of fine watchmaking—together.</p>
-        <a href="#" class="cta-button">Join Now</a>
+        <a href="https://member.unionleague.org/members/member-events/affinity-clubs/the-union-league-horology-club" target="_blank" class="cta-button">Join Now</a>
       </div>
     </div>
   </section>
@@ -202,6 +204,12 @@
   <footer>
     &copy; 2025 The Union League Horology Club. All rights reserved.
   </footer>
-
+ <script>
+   function scrollToFeatures() {
+    document
+      .getElementById('features')
+      .scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  </script>
 </body>
 </html>
