@@ -63,7 +63,7 @@
    /* THE SCROLL ARROW */
     .scroll-to-content {
       position: absolute;
-      bottom: calc(32px + env(safe-area-inset-bottom));
+      bottom: 32px; /* calc(32px + env(safe-area-inset-bottom)); */
       left: 50%;
       transform: translateX(-50%);
       cursor: pointer;
@@ -194,7 +194,26 @@
     &copy; 2025 The Union League Horology Club. All rights reserved.
   </footer>
  <script>
-    function scrollToFeatures() {
+ (function() {
+    const arrow = document.querySelector('.scroll-to-content');
+    if (!arrow) return;
+
+    function positionArrow() {
+      // total screen height
+      const screenH = window.screen.height;
+      // visible viewport height (shrinks when bars are shown)
+      const viewportH = window.innerHeight;
+      // browser chrome height
+      const barH = screenH - viewportH;
+      // set bottom = 32px + chrome height
+      arrow.style.bottom = (32 + barH) + 'px';
+    }
+
+    // reposition on load and whenever the viewport resizes
+    window.addEventListener('resize', positionArrow);
+    positionArrow();
+  })();
+   function scrollToFeatures() {
     document
       .getElementById('features')
       .scrollIntoView({ behavior: 'smooth', block: 'start' });
