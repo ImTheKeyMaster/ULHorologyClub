@@ -60,7 +60,28 @@
       text-decoration:none; font-weight:bold;
       margin-top: auto;
     }
-
+   /* THE SCROLL ARROW */
+    .scroll-to-content {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: pointer;
+      z-index: 1;
+    }
+    .scroll-to-content .arrow {
+      width: 24px;
+      height: 24px;
+      border-right: 3px solid #fff;
+      border-bottom: 3px solid #fff;
+      transform: rotate(45deg);
+      animation: arrow-strobe 2s infinite;
+    }
+    @keyframes arrow-strobe {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+    
     /* FEATURES ON TOP */
     #features {
       position: relative;
@@ -124,6 +145,9 @@
       <h1>The Union League<br>Horology Club</h1>
       <p>At the Union League Horology Club, we celebrate a shared passion for exceptional watchmaking. Our community brings together enthusiasts — from seasoned collectors to those just beginning their journey — to enjoy and explore the art, science, and history of fine timepieces.</p>
       <a href="https://member.unionleague.org/members/member-events/affinity-clubs/the-union-league-horology-club" target="_blank" class="cta-button">Join Now</a>
+    </div>
+    <div class="scroll-to-content" onclick="scrollToFeatures()">
+      <div class="arrow"></div>
     </div>
   </div>
 
