@@ -5,34 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Responsive Image Carousel</title>
   <style>
-    body {
+    html, body {
       margin: 0;
-      font-family: sans-serif;
+      padding: 0;
+      height: 100%;
       background: #111;
+      font-family: sans-serif;
       color: white;
     }
 
     .carousel {
-      max-width: 100%;
+      width: 100vw;
+      height: 100vh;
       overflow: hidden;
       position: relative;
     }
 
     .carousel-track {
       display: flex;
-      transition: transform 0.5s ease-in-out;
+      transition: transform 10s ease-in-out;
+      height: 100%;
     }
 
     .carousel-slide {
       min-width: 100%;
+      height: 100%;
       box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .carousel-slide img {
-      display: block;
-      width: 100vw;
+      max-width: 100vw;
+      max-height: 100vh;
+      width: auto;
       height: auto;
-      max-width: 100%;
+      object-fit: contain;
+      display: block;
     }
 
     .carousel-buttons {
@@ -40,6 +50,7 @@
       justify-content: center;
       gap: 1rem;
       margin-top: 0.5rem;
+      position: static;
     }
 
     .carousel-buttons button {
@@ -60,12 +71,9 @@
     @media (min-width: 769px) {
       .carousel-buttons {
         position: absolute;
-        top: 50%;
+        bottom: 1rem;
         left: 0;
         right: 0;
-        justify-content: space-between;
-        transform: translateY(-50%);
-        padding: 0 1rem;
         margin-top: 0;
       }
     }
@@ -81,7 +89,7 @@
     <div class="carousel-slide"><img src="/images/facts/RailRoad.jpg" alt="Slide 4"></div>
     <div class="carousel-slide"><img src="/images/facts/China.jpg" alt="Slide 5"></div>
     <div class="carousel-slide"><img src="/images/facts/GPS.jpg" alt="Slide 6"></div>
- </div>
+  </div>
 
   <div class="carousel-buttons">
     <button id="prevBtn">&#10094;</button>
@@ -113,11 +121,11 @@
 
   window.addEventListener('resize', updateCarousel);
 
-  // Auto-advance (optional)
+  // Auto-advance every 10 seconds
   setInterval(() => {
     currentIndex = (currentIndex + 1) % slides.length;
     updateCarousel();
-  }, 6000);
+  }, 10000);
 </script>
 
 </body>
