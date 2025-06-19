@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Image List with Descriptions</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: white;
+    }
+
+    .container {
+      padding: 1rem;
+      padding-bottom: 80px; /* leave space for back button */
+    }
+
+    .image-block {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .image-title {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+
+    .image-description {
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      color: #ccc;
+    }
+
+    .image-block img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    .back-button {
+      text-align: center;
+      position: fixed;
+      bottom: calc(1rem + 10px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+    }
+
+    .back-button a {
+      text-decoration: none;
+      color: white;
+      background-color: #C4A675;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .back-button a:hover {
+      background-color: #E6C897;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="image-block">
+    <div class="image-title">Sundials</div>
+    <img src="/images/facts/Sundials.jpg" alt="Sundials">
+    <div class="image-description">Before clocks, people used sundials to track time based on the sun’s position.</div>
+  </div>
+
+  <div class="image-block">
+    <div class="image-title">Clock Towers</div>
+    <img src="/images/facts/tower.jpg" alt="Clock Tower">
+    <div class="image-description">Clock towers kept communities on a shared schedule in the age before personal watches.</div>
+  </div>
+
+  <div class="image-block">
+    <div class="image-title">10-Hour Day</div>
+    <img src="/images/facts/10Hours.jpg" alt="10-Hour Clock">
+    <div class="image-description">During the French Revolution, time was decimalized — each day had 10 hours.</div>
+  </div>
+
+  <div class="image-block">
+    <div class="image-title">Railroad Standard Time</div>
+    <img src="/images/facts/RailRoad.jpg" alt="Railroad Time">
+    <div class="image-description">Train crashes caused by local time differences led to the standardization of time zones.</div>
+  </div>
+
+  <div class="image-block">
+    <div class="image-title">One Time Zone for China</div>
+    <img src="/images/facts/China.jpg" alt="China Time Zone">
+    <div class="image-description">Despite its size, all of China uses a single time zone: Beijing Time.</div>
+  </div>
+
+  <div class="image-block">
+    <div class="image-title">GPS Time</div>
+    <img src="/images/facts/GPS.jpg" alt="GPS Time">
+    <div class="image-description">Modern GPS systems rely on ultra-precise atomic clocks aboard satellites.</div>
+  </div>
+</div>
+
+<div class="back-button">
+  <a href="index.html">Back</a>
+</div>
+
+</body>
+</html>
