@@ -74,7 +74,7 @@
     .back-button {
       text-align: center;
       position: fixed;
-      bottom: 10px;
+      bottom: calc(1rem + 10px);
       left: 0;
       right: 0;
       z-index: 20;
@@ -136,7 +136,7 @@
     /* Mobile behavior */
     @media (max-width: 768px) {
       .image-block {
-        width: 80%;
+        width: 90%;
       }
 
       .zoom-icon {
@@ -145,6 +145,7 @@
 
       .image-container {
         cursor: default;
+        background: black; /* 👈 New line added */
       }
     }
   </style>
@@ -153,7 +154,7 @@
 
 <div class="container">
   <div class="image-block">
-    <div class="image-title">June 5th, 2025: ULHC X RedBar X The 1916 Company</div>
+    <div class="image-title">6/5/2025: ULHC X RedBar X The 1916 Company</div>
     <div class="image-container" data-image="/images/events/20250605_RedBar_1916.jpg">
       <img src="/images/events/20250605_RedBar_1916.jpg" alt="2025-06-05">
       <div class="zoom-icon">🔍</div>
