@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Responsive Image Carousel</title>
+  <title>Fun Facts Carousel</title>
   <style>
     html, body {
       margin: 0;
@@ -12,12 +12,20 @@
       background: #111;
       font-family: sans-serif;
       color: white;
-      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 0.5rem 0;
+      font-size: 2rem;
+      color: #fff;
     }
 
     .carousel {
+      flex-grow: 1;
       width: 100vw;
-      height: 100vh;
       overflow: hidden;
       position: relative;
     }
@@ -50,8 +58,8 @@
       display: flex;
       justify-content: center;
       gap: 1rem;
-      margin-top: 0.5rem;
-      position: static;
+      margin: 0.5rem 0;
+      position: relative;
       z-index: 10;
     }
 
@@ -70,18 +78,52 @@
       background: rgba(255, 255, 255, 0.25);
     }
 
-    @media (min-width: 769px) {
-      .carousel-buttons {
-        position: absolute;
-        bottom: 1rem;
-        left: 0;
-        right: 0;
-        margin-top: 0;
-      }
+    .carousel-dots {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .carousel-dots button {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: none;
+      background: #666;
+      opacity: 0.5;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+
+    .carousel-dots button.active {
+      background: white;
+      opacity: 1;
+    }
+
+    .home-button {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .home-button a {
+      text-decoration: none;
+      color: white;
+      background-color: #444;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .home-button a:hover {
+      background-color: #666;
     }
   </style>
 </head>
 <body>
+
+<h1>Fun Facts</h1>
 
 <div class="carousel" id="carousel">
   <div class="carousel-track" id="carouselTrack">
@@ -99,38 +141,74 @@
   </div>
 </div>
 
+<div class="carousel-dots" id="carouselDots"></div>
+
+<div class="home-button">
+  <a href="index.html">Home</a>
+</div>
+
 <script>
   const track = document.getElementById('carouselTrack');
   const slides = Array.from(track.children);
   const nextButton = document.getElementById('nextBtn');
   const prevButton = document.getElementById('prevBtn');
+  const dotsContainer = document.getElementById('carouselDots');
   const carousel = document.getElementById('carousel');
   let currentIndex = 0;
   let startX = 0;
   let isSwiping = false;
+  let autoAdvanceInterval;
 
   function updateCarousel() {
     const slideWidth = slides[0].getBoundingClientRect().width;
     track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+    updateDots();
   }
 
-  nextButton.addEventListener('click', () => {
+  function updateDots() {
+    const dots = Array.from(dotsContainer.children);
+    dots.forEach((dot, index) => {
+      dot.classList.toggle('active', index === currentIndex);
+    });
+  }
+
+  function goToSlide(index) {
+    currentIndex = index;
+    updateCarousel();
+    resetAutoAdvance();
+  }
+
+  function goToNextSlide() {
     currentIndex = (currentIndex + 1) % slides.length;
     updateCarousel();
-  });
+    resetAutoAdvance();
+  }
 
-  prevButton.addEventListener('click', () => {
+  function goToPrevSlide() {
     currentIndex = (currentIndex - 1 + slides.length) % slides.length;
     updateCarousel();
-  });
+    resetAutoAdvance();
+  }
+
+  function resetAutoAdvance() {
+    clearInterval(autoAdvanceInterval);
+    autoAdvanceInterval = setInterval(goToNextSlide, 10000);
+  }
+
+  nextButton.addEventListener('click', goToNextSlide);
+  prevButton.addEventListener('click', goToPrevSlide);
 
   window.addEventListener('resize', updateCarousel);
 
-  // Auto-advance every 10 seconds
-  setInterval(() => {
-    currentIndex = (currentIndex + 1) % slides.length;
-    updateCarousel();
-  }, 10000);
+  // Build dots
+  slides.forEach((_, index) => {
+    const dot = document.createElement('button');
+    dot.addEventListener('click', () => goToSlide(index));
+    dotsContainer.appendChild(dot);
+  });
+
+  updateCarousel();
+  resetAutoAdvance();
 
   // Swipe gesture support
   carousel.addEventListener('touchstart', (e) => {
@@ -144,11 +222,10 @@
 
     if (Math.abs(deltaX) > 50) {
       if (deltaX > 0) {
-        currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+        goToPrevSlide();
       } else {
-        currentIndex = (currentIndex + 1) % slides.length;
+        goToNextSlide();
       }
-      updateCarousel();
       isSwiping = false;
     }
   });
