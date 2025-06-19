@@ -11,6 +11,7 @@
       font-family: Arial, sans-serif;
       background-color: #f9f9f9;
       color: #333;
+      padding-bottom: 100px; /* space for fixed Back button */
     }
 
     h1 {
@@ -40,6 +41,29 @@
 
     .school a:hover {
       text-decoration: underline;
+    }
+
+    .back-button {
+      text-align: center;
+      position: fixed;
+      bottom: 1rem;
+      left: 0;
+      right: 0;
+      z-index: 20;
+    }
+
+    .back-button a {
+      text-decoration: none;
+      color: white;
+      background-color: #C4A675;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .back-button a:hover {
+      background-color: #E6C897;
     }
   </style>
 </head>
@@ -74,6 +98,10 @@
     <h2>Paris Junior College - Watchmaking Program</h2>
     <p><a href="https://www.google.com/maps?q=2400+Clarksville+Street,+Paris,+TX+75460" target="_blank">2400 Clarksville Street, Paris, TX 75460</a></p>
     <p>This Texas-based program offers state-of-the-art facilities and a 2-year curriculum that includes watch repair, micro-mechanics, and timekeeping restoration, preparing students for AWCI certification.</p>
+  </div>
+
+  <div class="back-button">
+    <a href="index.html">Back</a>
   </div>
 </body>
 </html>
