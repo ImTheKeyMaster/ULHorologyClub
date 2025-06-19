@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Image List with Descriptions</title>
+  <title>Past ULHC Events</title>
   <style>
     html, body {
       margin: 0;
@@ -74,7 +74,7 @@
     .back-button {
       text-align: center;
       position: fixed;
-      bottom: calc(1rem + 10px);
+      bottom: 10px;
       left: 0;
       right: 0;
       z-index: 20;
@@ -132,6 +132,21 @@
       cursor: pointer;
       font-weight: bold;
     }
+
+    /* Mobile behavior */
+    @media (max-width: 768px) {
+      .image-block {
+        width: 80%;
+      }
+
+      .zoom-icon {
+        display: none;
+      }
+
+      .image-container {
+        cursor: default;
+      }
+    }
   </style>
 </head>
 <body>
@@ -143,8 +158,13 @@
       <img src="/images/events/20250605_RedBar_1916.jpg" alt="2025-06-05">
       <div class="zoom-icon">🔍</div>
     </div>
-    <div class="image-description">Members of the Union League Horology Club gather for their first unofficial event, generously hosted by RedBar Philadelphia at The 1916 Company (1529 Walnut Street) on Wednesday, June 5th. The private evening featured an elegant spread of light bites and drinks, with guests enjoying hands-on access to an array of exceptional timepieces. The event fostered lively conversation and camaraderie among watch enthusiasts in a welcoming and refined setting.</div>
+    <div class="image-description">
+      Members of the Union League Horology Club gather for their first unofficial event, generously hosted by RedBar Philadelphia at The 1916 Company (1529 Walnut Street) on Wednesday, June 5th. The private evening featured an elegant spread of light bites and drinks, with guests enjoying hands-on access to an array of exceptional timepieces. The event fostered lively conversation and camaraderie among watch enthusiasts in a welcoming and refined setting.
+    </div>
   </div>
+
+  <!-- Add more image-blocks here if needed -->
+</div>
 
 <div class="back-button">
   <a href="index.html">Back</a>
@@ -163,6 +183,9 @@
 
   document.querySelectorAll('.image-container').forEach(container => {
     container.addEventListener('click', () => {
+      // Disable zoom on mobile
+      if (window.innerWidth <= 768) return;
+
       const src = container.getAttribute('data-image');
       modalImage.src = src;
       modal.classList.add('active');
@@ -174,7 +197,6 @@
     modalImage.src = '';
   });
 
-  // Close modal on outside click
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       modal.classList.remove('active');
