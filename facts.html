@@ -12,14 +12,24 @@
       background: #111;
       font-family: sans-serif;
       color: white;
+    }
+
+    body {
       display: flex;
       flex-direction: column;
     }
 
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
     .carousel {
       width: 100vw;
-      flex-shrink: 0;
-      overflow: hidden;
       position: relative;
     }
 
@@ -38,9 +48,7 @@
 
     .carousel-slide img {
       max-width: 100%;
-      max-height: calc(100vh - 160px); /* Account for dots + Back button */
-      width: auto;
-      height: auto;
+      max-height: calc(100vh - 160px); /* Leaves space for dots & Back button */
       object-fit: contain;
       display: block;
     }
@@ -82,8 +90,7 @@
       display: flex;
       justify-content: center;
       gap: 0.5rem;
-      margin: 0.5rem auto 0;
-      padding-bottom: 0.5rem;
+      margin: 0.5rem auto;
     }
 
     .carousel-dots button {
@@ -104,7 +111,11 @@
 
     .back-button {
       text-align: center;
-      margin: 1rem 0;
+      position: fixed;
+      bottom: 1rem;
+      left: 0;
+      right: 0;
+      z-index: 20;
     }
 
     .back-button a {
@@ -124,23 +135,25 @@
 </head>
 <body>
 
-<div class="carousel" id="carousel">
-  <div class="carousel-track" id="carouselTrack">
-    <div class="carousel-slide"><img src="/images/facts/Sundials.jpg" alt="Slide 1"></div>
-    <div class="carousel-slide"><img src="/images/facts/tower.jpg" alt="Slide 2"></div>
-    <div class="carousel-slide"><img src="/images/facts/10Hours.jpg" alt="Slide 3"></div>
-    <div class="carousel-slide"><img src="/images/facts/RailRoad.jpg" alt="Slide 4"></div>
-    <div class="carousel-slide"><img src="/images/facts/China.jpg" alt="Slide 5"></div>
-    <div class="carousel-slide"><img src="/images/facts/GPS.jpg" alt="Slide 6"></div>
+<div class="main-content">
+  <div class="carousel" id="carousel">
+    <div class="carousel-track" id="carouselTrack">
+      <div class="carousel-slide"><img src="/images/facts/Sundials.jpg" alt="Slide 1"></div>
+      <div class="carousel-slide"><img src="/images/facts/tower.jpg" alt="Slide 2"></div>
+      <div class="carousel-slide"><img src="/images/facts/10Hours.jpg" alt="Slide 3"></div>
+      <div class="carousel-slide"><img src="/images/facts/RailRoad.jpg" alt="Slide 4"></div>
+      <div class="carousel-slide"><img src="/images/facts/China.jpg" alt="Slide 5"></div>
+      <div class="carousel-slide"><img src="/images/facts/GPS.jpg" alt="Slide 6"></div>
+    </div>
+
+    <div class="carousel-buttons">
+      <button id="prevBtn">&#10094;</button>
+      <button id="nextBtn">&#10095;</button>
+    </div>
   </div>
 
-  <div class="carousel-buttons">
-    <button id="prevBtn">&#10094;</button>
-    <button id="nextBtn">&#10095;</button>
-  </div>
+  <div class="carousel-dots" id="carouselDots"></div>
 </div>
-
-<div class="carousel-dots" id="carouselDots"></div>
 
 <div class="back-button">
   <a href="index.html">Back</a>
