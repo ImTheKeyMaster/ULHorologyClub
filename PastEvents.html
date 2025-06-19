@@ -15,30 +15,60 @@
 
     .container {
       padding: 1rem;
-      padding-bottom: 80px; /* leave space for back button */
+      padding-bottom: 80px; /* space for Back button */
     }
 
     .image-block {
       margin-bottom: 2rem;
-      text-align: center;
+      position: relative;
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .image-title {
       font-size: 1.5rem;
       margin-bottom: 0.5rem;
       font-weight: bold;
+      text-align: left;
+    }
+
+    .image-container {
+      position: relative;
+      background: white;
+      border: 2px solid black;
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .image-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .zoom-icon {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      pointer-events: none;
     }
 
     .image-description {
       font-size: 1rem;
       margin-top: 0.5rem;
       color: #ccc;
-    }
-
-    .image-block img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
+      text-align: left;
     }
 
     .back-button {
@@ -63,6 +93,45 @@
     .back-button a:hover {
       background-color: #E6C897;
     }
+
+    /* Modal Overlay */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border: 4px solid white;
+      border-radius: 8px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -70,37 +139,55 @@
 <div class="container">
   <div class="image-block">
     <div class="image-title">Sundials</div>
-    <img src="/images/facts/Sundials.jpg" alt="Sundials">
+    <div class="image-container" data-image="/images/facts/Sundials.jpg">
+      <img src="/images/facts/Sundials.jpg" alt="Sundials">
+      <div class="zoom-icon">🔍</div>
+    </div>
     <div class="image-description">Before clocks, people used sundials to track time based on the sun’s position.</div>
   </div>
 
   <div class="image-block">
     <div class="image-title">Clock Towers</div>
-    <img src="/images/facts/tower.jpg" alt="Clock Tower">
+    <div class="image-container" data-image="/images/facts/tower.jpg">
+      <img src="/images/facts/tower.jpg" alt="Clock Tower">
+      <div class="zoom-icon">🔍</div>
+    </div>
     <div class="image-description">Clock towers kept communities on a shared schedule in the age before personal watches.</div>
   </div>
 
   <div class="image-block">
     <div class="image-title">10-Hour Day</div>
-    <img src="/images/facts/10Hours.jpg" alt="10-Hour Clock">
+    <div class="image-container" data-image="/images/facts/10Hours.jpg">
+      <img src="/images/facts/10Hours.jpg" alt="10-Hour Clock">
+      <div class="zoom-icon">🔍</div>
+    </div>
     <div class="image-description">During the French Revolution, time was decimalized — each day had 10 hours.</div>
   </div>
 
   <div class="image-block">
     <div class="image-title">Railroad Standard Time</div>
-    <img src="/images/facts/RailRoad.jpg" alt="Railroad Time">
+    <div class="image-container" data-image="/images/facts/RailRoad.jpg">
+      <img src="/images/facts/RailRoad.jpg" alt="Railroad Time">
+      <div class="zoom-icon">🔍</div>
+    </div>
     <div class="image-description">Train crashes caused by local time differences led to the standardization of time zones.</div>
   </div>
 
   <div class="image-block">
     <div class="image-title">One Time Zone for China</div>
-    <img src="/images/facts/China.jpg" alt="China Time Zone">
+    <div class="image-container" data-image="/images/facts/China.jpg">
+      <img src="/images/facts/China.jpg" alt="China Time Zone">
+      <div class="zoom-icon">🔍</div>
+    </div>
     <div class="image-description">Despite its size, all of China uses a single time zone: Beijing Time.</div>
   </div>
 
   <div class="image-block">
     <div class="image-title">GPS Time</div>
-    <img src="/images/facts/GPS.jpg" alt="GPS Time">
+    <div class="image-container" data-image="/images/facts/GPS.jpg">
+      <img src="/images/facts/GPS.jpg" alt="GPS Time">
+      <div class="zoom-icon">🔍</div>
+    </div>
     <div class="image-description">Modern GPS systems rely on ultra-precise atomic clocks aboard satellites.</div>
   </div>
 </div>
@@ -108,6 +195,39 @@
 <div class="back-button">
   <a href="index.html">Back</a>
 </div>
+
+<!-- Modal for enlarged image -->
+<div class="modal" id="imageModal">
+  <span class="modal-close" id="modalClose">&times;</span>
+  <img id="modalImage" src="" alt="Enlarged view">
+</div>
+
+<script>
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalClose = document.getElementById('modalClose');
+
+  document.querySelectorAll('.image-container').forEach(container => {
+    container.addEventListener('click', () => {
+      const src = container.getAttribute('data-image');
+      modalImage.src = src;
+      modal.classList.add('active');
+    });
+  });
+
+  modalClose.addEventListener('click', () => {
+    modal.classList.remove('active');
+    modalImage.src = '';
+  });
+
+  // Close modal on outside click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+      modalImage.src = '';
+    }
+  });
+</script>
 
 </body>
 </html>
