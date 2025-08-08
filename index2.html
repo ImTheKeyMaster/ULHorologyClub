@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ULHorology Club</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Toast styles - top right */
+    .ulh-toast {
+      position: fixed;
+      top: -100px; /* start hidden above the screen */
+      right: 20px;
+      background: #333;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 6px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      transform: translateY(0);
+      transition: top 0.4s ease;
+      z-index: 9999;
+    }
+
+    .ulh-toast.show {
+      top: 20px; /* slides down into view */
+    }
+
+    .ulh-toast a {
+      color: #4db8ff;
+      text-decoration: underline;
+    }
+
+    .ulh-toast a:hover {
+      text-decoration: none;
+    }
+
+    .ulh-toast-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Welcome to ULHorology Club</h1>
+  <p>This is where our club news and events will appear.</p>
+
+  <!-- Toast Container -->
+  <div id="ulh-toast" class="ulh-toast">
+    <span>
+      📅 Our next event is coming up! 
+      <a href="https://example.com/event-details" target="_blank" rel="noopener noreferrer">
+        Click here for details
+      </a>
+    </span>
+    <button class="ulh-toast-close" aria-label="Close">&times;</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const toast = document.getElementById('ulh-toast');
+      const closeBtn = document.querySelector('.ulh-toast-close');
+
+      // Show toast
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 200); // slight delay for smoother effect
+
+      // Auto-hide after 8 seconds
+      const hideTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 8000);
+
+      // Manual close
+      closeBtn.addEventListener('click', function () {
+        toast.classList.remove('show');
+        clearTimeout(hideTimeout);
+      });
+    });
+  </script>
+
+</body>
+</html>
