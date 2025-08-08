@@ -14,7 +14,7 @@
     /* Toast styles - top right */
     .ulh-toast {
       position: fixed;
-      top: -150px; /* start hidden above screen */
+      top: 0;
       right: 20px;
       width: 33%;
       background: #fff8dc; /* pale yellow parchment */
@@ -29,13 +29,13 @@
       line-height: 1.4;
       min-height: 6em; /* roughly 4 lines */
       box-sizing: border-box;
-      transform: translateY(0);
-      transition: top 0.4s ease;
+      transform: translateY(-100%); /* fully hidden above screen */
+      transition: transform 0.4s ease;
       z-index: 9999;
     }
 
     .ulh-toast.show {
-      top: 20px; /* slides into view */
+      transform: translateY(0); /* slides into view */
     }
 
     .ulh-toast a {
@@ -83,7 +83,7 @@
       // Show toast
       setTimeout(() => {
         toast.classList.add('show');
-      }, 200); // small delay for smooth animation
+      }, 200);
 
       // Auto-hide after 8 seconds
       const hideTimeout = setTimeout(() => {
