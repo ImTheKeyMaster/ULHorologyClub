@@ -10,14 +10,12 @@
       margin: 0;
       padding: 0;
     }
-
-    /* Toast styles - top right */
     .ulh-toast {
       position: fixed;
       top: 0;
       right: 20px;
       width: 33%;
-      background: #fff8dc; /* pale yellow parchment */
+      background: #fff8dc;
       color: #333;
       padding: 16px 20px;
       border-radius: 6px;
@@ -27,28 +25,21 @@
       gap: 8px;
       font-size: 14px;
       line-height: 1.4;
-      min-height: 6em; /* roughly 4 lines */
+      min-height: 6em;
       box-sizing: border-box;
-      transform: translateY(calc(-100% - 20px)); /* completely offscreen */
+      transform: translateY(calc(-100% - 20px));
       transition: transform 0.4s ease, opacity 0.4s ease;
       opacity: 0;
       z-index: 9999;
     }
-
     .ulh-toast.show {
       transform: translateY(0);
       opacity: 1;
     }
-
     .ulh-toast a {
       color: #0066cc;
       text-decoration: underline;
     }
-
-    .ulh-toast a:hover {
-      text-decoration: none;
-    }
-
     .ulh-toast-close {
       background: none;
       border: none;
@@ -62,55 +53,49 @@
 </head>
 <body>
 
-  <h1>Welcome to ULHorology Club</h1>
-  <p>This is where our club news and events will appear.</p>
+<h1>Welcome to ULHorology Club</h1>
+<p>This is where our club news and events will appear.</p>
 
-  <!-- Toast Container -->
-  <div id="ulh-toast" class="ulh-toast">
-    <!-- JSON content will be injected here -->
-    <span id="ulh-toast-message"></span>
-    <button class="ulh-toast-close" aria-label="Close">&times;</button>
-  </div>
+<div id="ulh-toast" class="ulh-toast">
+  <span id="ulh-toast-message"></span>
+  <button class="ulh-toast-close" aria-label="Close">&times;</button>
+</div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const toast = document.getElementById('ulh-toast');
-      const toastMessage = document.getElementById('ulh-toast-message');
-      const closeBtn = document.querySelector('.ulh-toast-close');
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const toast = document.getElementById('ulh-toast');
+  const toastMessage = document.getElementById('ulh-toast-message');
+  const closeBtn = document.querySelector('.ulh-toast-close');
 
-      fetch('TOAST.json')
-        .then(response => response.json())
-        .then(data => {
-          const today = new Date();
-          const startDate = new Date(data.startDate);
-          const endDate = new Date(data.endDate);
+  fetch('TOAST.json')
+    .then(response => response.json())
+    .then(data => {
+      console.log("Toast JSON loaded:", data);
+      const today = new Date();
+      const startDate = new Date(data.startDate);
+      const endDate = new Date(data.endDate);
 
-          if (today >= startDate && today <= endDate) {
-            // Insert message content
-            toastMessage.innerHTML = `${data.message} <a href="${data.link}" target="_blank" rel="noopener noreferrer">${data.linkText}</a>`;
-
-            // Show toast after short delay
-            setTimeout(() => {
-              toast.classList.add('show');
-            }, 200);
-
-            // Auto-hide after 8 seconds
-            const hideTimeout = setTimeout(() => {
-              toast.classList.remove('show');
-            }, 8000);
-
-            // Manual close
-            closeBtn.addEventListener('click', function () {
-              toast.classList.remove('show');
-              clearTimeout(hideTimeout);
-            });
-          }
-        })
-        .catch(err => {
-          console.error('Error loading TOAST.json:', err);
+      if (today >= startDate && today <= endDate) {
+        toastMessage.innerHTML = `${data.message} <a href="${data.link}" target="_blank" rel="noopener noreferrer">${data.linkText}</a>`;
+        setTimeout(() => {
+          toast.classList.add('show');
+        }, 200);
+        const hideTimeout = setTimeout(() => {
+          toast.classList.remove('show');
+        }, 8000);
+        closeBtn.addEventListener('click', function () {
+          toast.classList.remove('show');
+          clearTimeout(hideTimeout);
         });
+      } else {
+        console.log("Toast not shown — outside date range.");
+      }
+    })
+    .catch(err => {
+      console.error('Error loading TOAST.json:', err);
     });
-  </script>
+});
+</script>
 
 </body>
 </html>
