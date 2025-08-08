@@ -14,28 +14,32 @@
     /* Toast styles - top right */
     .ulh-toast {
       position: fixed;
-      top: -100px; /* start hidden above the screen */
+      top: -150px; /* start hidden above screen */
       right: 20px;
-      background: #333;
-      color: white;
-      padding: 12px 16px;
+      width: 33%;
+      background: #fff8dc; /* pale yellow parchment */
+      color: #333;
+      padding: 16px 20px;
       border-radius: 6px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
       font-size: 14px;
+      line-height: 1.4;
+      min-height: 6em; /* roughly 4 lines */
+      box-sizing: border-box;
       transform: translateY(0);
       transition: top 0.4s ease;
       z-index: 9999;
     }
 
     .ulh-toast.show {
-      top: 20px; /* slides down into view */
+      top: 20px; /* slides into view */
     }
 
     .ulh-toast a {
-      color: #4db8ff;
+      color: #0066cc;
       text-decoration: underline;
     }
 
@@ -46,9 +50,11 @@
     .ulh-toast-close {
       background: none;
       border: none;
-      color: white;
+      color: #333;
       font-size: 16px;
       cursor: pointer;
+      margin-left: auto;
+      flex-shrink: 0;
     }
   </style>
 </head>
@@ -60,10 +66,11 @@
   <!-- Toast Container -->
   <div id="ulh-toast" class="ulh-toast">
     <span>
-      📅 Our next event is coming up! 
+      📅 Our next ULHorology event is coming soon!  
+      Join us for an evening of watch talk, rare timepieces, and networking with fellow enthusiasts.  
       <a href="https://example.com/event-details" target="_blank" rel="noopener noreferrer">
-        Click here for details
-      </a>
+        Click here for full event details
+      </a>.
     </span>
     <button class="ulh-toast-close" aria-label="Close">&times;</button>
   </div>
@@ -76,7 +83,7 @@
       // Show toast
       setTimeout(() => {
         toast.classList.add('show');
-      }, 200); // slight delay for smoother effect
+      }, 200); // small delay for smooth animation
 
       // Auto-hide after 8 seconds
       const hideTimeout = setTimeout(() => {
