@@ -143,32 +143,29 @@
 
 
     /* ULH TOAST STYLES */
-    .ulh-toast {
-      position: fixed;
-      top: 0;
-      right: 20px;
-      width: 33%;
-      background: #fff8dc; /* pale yellow parchment */
-      color: #333;
-      padding: 16px 20px;
-      border-radius: 6px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      font-size: 14px;
-      line-height: 1.4;
-      min-height: 6em; /* roughly 4 lines */
-      box-sizing: border-box;
-      transform: translateY(calc(-100% - 20px)); /* completely offscreen */
-      transition: transform 0.4s ease, opacity 0.4s ease;
-      opacity: 0;
-      z-index: 9999;
-    }
-    .ulh-toast.show {
-      transform: translateY(0);
-      opacity: 1;
-    }
+  .ulh-toast {
+    position: fixed;
+    top: 0;
+    right: 20px;
+    width: 33%;
+    min-width: 320px; /* ensures icon + X + ~30 chars fit */
+    background: #fff8dc; /* pale yellow parchment */
+    color: #333;
+    padding: 16px 20px;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    min-height: 6em; /* roughly 4 lines */
+    box-sizing: border-box;
+    transform: translateY(calc(-100% - 20px)); /* completely offscreen */
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    opacity: 0;
+    z-index: 9999;
+  }
     .ulh-toast a {
       color: #0066cc;
       text-decoration: underline;
