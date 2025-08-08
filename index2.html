@@ -3,19 +3,152 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ULHorology Club</title>
+  <title>The Union League Horology Club</title>
+  <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+  <link rel="manifest" href="/favicon/site.webmanifest" />
+
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; font-family:'Inter',sans-serif; overflow-x:hidden; }
+
+    /* FIXED BACKGROUND LAYER */
+    #bg {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      /* add a solid black fallback before the image loads */
+      background: #000 url('/images/Background2.png') center/cover no-repeat fixed;
+      z-index: 0;
     }
+    #bg::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+    }
+
+    /* OVERLAY CONTENT */
+    #hero-content {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      color: white;
+      padding: 40px 20px;
+    }
+    .logo-overlay {
+      position: absolute; top:20px; left:20px; z-index:2;
+    }
+    .logo-overlay img { height:140px; transition:height .3s; }
+
+    #hero-text {
+      max-width:700px; margin-top:100px;
+    }
+    #hero-text h1 {
+      font-size:3rem;
+      text-shadow: 0 0 20px rgba(0,0,0,1);
+      margin-bottom:1rem;
+    }
+    #hero-text p {
+      font-size:1.25rem;
+      text-shadow: 0 0 20px rgba(0,0,0,1);
+      margin-bottom:2rem;
+    }
+    .cta-button {
+      background:#C4A675; color:#fff;
+      padding:12px 24px; border-radius:4px;
+      text-decoration:none; font-weight:bold;
+      margin-top: auto;
+    }
+   /* THE SCROLL ARROW */
+    .scroll-to-content {
+      position: absolute;
+      bottom:  calc(96px + env(safe-area-inset-bottom)); 
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: pointer;
+      z-index: 1;
+    }
+    .scroll-to-content .arrow {
+      width: 24px;
+      height: 24px;
+      border-right: 3px solid #fff;
+      border-bottom: 3px solid #fff;
+      transform: rotate(45deg);
+      animation: arrow-strobe 2s infinite;
+    }
+    @keyframes arrow-strobe {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+    
+    /* FEATURES ON TOP */
+    #features {
+      position: relative;
+      z-index: 1;
+      margin-top: 0px;    /* pull up over hero-content */
+      padding-top: 0px;    /* compensate so content isn’t cut */
+      padding: 60px 20px;
+      text-align: center;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
+      gap:20px;
+      max-width:1200px; margin:0 auto;
+    }
+    .card {
+      position: relative;   /* add this */
+      background: #fff;
+      padding: 40px 20px 60px; /* extra bottom padding so content doesn’t overlap the button */
+      display: flex;
+      flex-direction: column;
+    }
+    .card .cta-button {
+      position: absolute;
+      bottom: 10px;         /* 10px from the bottom of the card */
+      left: 20px;           /* match your card’s horizontal padding */
+      right: 20px;          /* optional—if you want it to stretch or center */
+      margin: 0 auto;       /* center if you set a width */
+    }
+    /* .card:nth-child(even) { background:#f3f3f3; } */
+    .card img {
+      width:100%; height:290px; object-fit:cover;
+      margin-bottom:16px;
+    }
+    .card h3 { font-size:1.5rem; margin-bottom:10px; }
+
+    /* FOOTER */
+    footer {
+      background:#222; color:#fff;
+      padding:40px 20px; text-align:center;
+      position: relative; z-index:1;
+    }
+
+    /* RESPONSIVE TWEAKS */
+    @media (max-width:767px) {
+      #hero-text { margin-top:80px; }
+      .cards { display:block; }
+      .card { margin-bottom:20px; }
+    }
+    @media (orientation:landscape) and (max-height:500px) {
+      .logo-overlay img { height:80px; }
+      #hero-text h1 { font-size:1.75rem; }
+      #hero-text p  { font-size:1rem; }
+    }
+    @media (min-width:1024px) {
+      .logo-overlay img { height:200px; }
+    }
+
+
+    /* ULH TOAST STYLES */
     .ulh-toast {
       position: fixed;
       top: 0;
       right: 20px;
       width: 33%;
-      background: #fff8dc;
+      background: #fff8dc; /* pale yellow parchment */
       color: #333;
       padding: 16px 20px;
       border-radius: 6px;
@@ -25,9 +158,9 @@
       gap: 8px;
       font-size: 14px;
       line-height: 1.4;
-      min-height: 6em;
+      min-height: 6em; /* roughly 4 lines */
       box-sizing: border-box;
-      transform: translateY(calc(-100% - 20px));
+      transform: translateY(calc(-100% - 20px)); /* completely offscreen */
       transition: transform 0.4s ease, opacity 0.4s ease;
       opacity: 0;
       z-index: 9999;
@@ -39,6 +172,9 @@
     .ulh-toast a {
       color: #0066cc;
       text-decoration: underline;
+    }
+    .ulh-toast a:hover {
+      text-decoration: none;
     }
     .ulh-toast-close {
       background: none;
@@ -53,56 +189,128 @@
 </head>
 <body>
 
-<h1>Welcome to ULHorology Club</h1>
-<p>This is where our club news and events will appear.</p>
+  <!-- fixed-bg layer -->
+  <div id="bg"></div>
 
-<div id="ulh-toast" class="ulh-toast">
-  <span id="ulh-toast-message"></span>
-  <button class="ulh-toast-close" aria-label="Close">&times;</button>
-</div>
+  <!-- scrolling overlay content -->
+  <div id="hero-content">
+    <div class="logo-overlay">
+      <img src="/images/ULHC Logo - Tight Crop.png" alt="Logo">
+    </div>
+    <div id="hero-text">
+      <h1>The Union League<br>Horology Club</h1>
+      <p>At the Union League Horology Club, we celebrate a shared passion for exceptional watchmaking. Our community brings together enthusiasts — from seasoned collectors to those just beginning their journey — to enjoy and explore the art, science, and history of fine timepieces.</p>
+      <a href="https://member.unionleague.org/members/member-events/affinity-clubs/the-union-league-horology-club" target="_blank" class="cta-button">Join Now</a>
+    </div>
+    <div class="scroll-to-content" onclick="scrollToFeatures()">
+      <div class="arrow"></div>
+    </div>
+  </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const toast = document.getElementById('ulh-toast');
-  const toastMessage = document.getElementById('ulh-toast-message');
-  const closeBtn = document.querySelector('.ulh-toast-close');
+  <!-- features that cover the background -->
+  <section id="features">
+    <div class="cards">
+      <div class="card">
+        <img src="/images/hamiltonad.jpg" alt="">
+        <h3>Discover Horological Heritage</h3>
+        <p>Delve into the art, science, and history behind the world’s most celebrated timepieces.</p>
+        <a href="/facts.html" class="cta-button">Fun Facts</a>
+      </div>
+      <div class="card">
+        <img src="/images/card5.jpg" alt="">
+        <h3>Latest Watch News</h3>
+        <p>Stay current with trends, releases, and expert insights delivered daily.</p>
+        <a href="https://www.watchreport.org" class="cta-button">Watch News</a>
+      </div>
+      <div class="card">
+        <img src="/images/card2.jpg" alt="">
+        <h3>Learn and Share</h3>
+        <p>Expert-led talks, hands‑on demonstrations, and peer-to-peer discussions.</p>
+      </div>
+      <div class="card">
+        <img src="/images/card3.jpg" alt="">
+        <h3>Connect with Fellow Enthusiasts</h3>
+        <p>Exclusive member events — brand ambassadors, Q&As, and themed social evenings.</p>
+        <a href="/past_events.html" class="cta-button">Past Events</a>
+      </div>
+      <div class="card">
+        <img src="/images/card4.jpg" alt="">
+        <h3>Access Unique Opportunities</h3>
+        <p>Priority invitations to previews, private showings, and watchmaking lessons.</p>
+        <a href="/watch_schools.html" class="cta-button">Watchmaking Institutes</a>
+      </div>
+      
+      <div class="card">
+        <img src="/images/card6.jpg" alt="">
+        <h3>Join Us</h3>
+        <p>Celebrate the precision, passion, and prestige of fine watchmaking—together.</p>
+        <a href="https://member.unionleague.org/members/member-events/affinity-clubs/the-union-league-horology-club" target="_blank" class="cta-button">Join Now</a>
+      </div>
+    </div>
+  </section>
 
-  fetch('toast.json')
-    .then(response => {
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      return response.json();
-    })
-    .then(data => {
-      console.log("Toast JSON loaded:", data);
-      const today = new Date();
-      const startDate = new Date(data.startDate);
-      const endDate = new Date(data.endDate);
+  <!-- footer -->
+  <footer>
+    &copy; 2025 The Union League Horology Club. All rights reserved.
+  </footer>
 
-      console.log("Today:", today.toISOString());
-      console.log("Start Date:", startDate.toISOString());
-      console.log("End Date:", endDate.toISOString());
+  <!-- TOAST CONTAINER -->
+  <div id="ulh-toast" class="ulh-toast" aria-live="polite" aria-atomic="true" role="alert">
+    <span id="ulh-toast-message"></span>
+    <button class="ulh-toast-close" aria-label="Close notification">&times;</button>
+  </div>
 
-      if (today >= startDate && today <= endDate) {
-        toastMessage.innerHTML = `${data.message} <a href="${data.link}" target="_blank" rel="noopener noreferrer">${data.linkText}</a>`;
-        setTimeout(() => {
-          toast.classList.add('show');
-        }, 200);
-        const hideTimeout = setTimeout(() => {
-          toast.classList.remove('show');
-        }, 8000);
-        closeBtn.addEventListener('click', function () {
-          toast.classList.remove('show');
-          clearTimeout(hideTimeout);
+  <script>
+    function scrollToFeatures() {
+      document
+        .getElementById('features')
+        .scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const toast = document.getElementById('ulh-toast');
+      const toastMessage = document.getElementById('ulh-toast-message');
+      const closeBtn = document.querySelector('.ulh-toast-close');
+
+      fetch('toast.json')
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          console.log("Toast JSON loaded:", data);
+          const today = new Date();
+          const startDate = new Date(data.startDate);
+          const endDate = new Date(data.endDate);
+
+          console.log("Today:", today.toISOString());
+          console.log("Start Date:", startDate.toISOString());
+          console.log("End Date:", endDate.toISOString());
+
+          if (today >= startDate && today <= endDate) {
+            toastMessage.innerHTML = `${data.message} <a href="${data.link}" target="_blank" rel="noopener noreferrer">${data.linkText}</a>`;
+            setTimeout(() => {
+              toast.classList.add('show');
+            }, 200);
+
+            const hideTimeout = setTimeout(() => {
+              toast.classList.remove('show');
+            }, 8000);
+
+            closeBtn.addEventListener('click', function () {
+              toast.classList.remove('show');
+              clearTimeout(hideTimeout);
+            });
+          } else {
+            console.log("Toast not shown — outside date range.");
+          }
+        })
+        .catch(err => {
+          console.error('Error loading toast.json:', err);
         });
-      } else {
-        console.log("Toast not shown — outside date range.");
-      }
-    })
-    .catch(err => {
-      console.error('Error loading toast.json:', err);
     });
-});
-</script>
-
+  </script>
 </body>
 </html>
