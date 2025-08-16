@@ -1,0 +1,631 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Warhammer Solo AR — Fixed (no loop error)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:12px; background:#f6f7f9; color:#111; }
+    #container { display:flex; gap:12px; align-items:flex-start; }
+    #videoWrap { position:relative; width:800px; max-width:60vw; }
+    video, canvas { width:100%; display:block; border-radius:8px; box-shadow:0 8px 28px rgba(10,10,30,0.08); }
+    canvas { position:absolute; left:0; top:0; touch-action:none; }
+    #ui { width:360px; min-width:260px; }
+    button, input[type=file], select { width:100%; padding:8px 10px; margin:8px 0; border-radius:6px; border:1px solid #d1d5db; background:#fff; cursor:pointer; }
+    label.small { font-size:0.85rem; color:#374151; display:block; margin-top:6px; }
+    #status { margin-top:6px; font-size:0.9rem; color:#111; }
+    #log { height:160px; overflow:auto; background:#fff; padding:8px; border-radius:6px; border:1px solid #e5e7eb; font-family:monospace; font-size:12px; margin-top:8px; }
+    .row { display:flex; gap:8px; }
+    .row > * { flex:1; }
+    .tiny { padding:6px 8px; font-size:13px; }
+    #calNudge { display:flex; gap:6px; margin-top:6px; }
+  </style>
+</head>
+<body>
+  <h2>Warhammer Solo AR — Fixed</h2>
+  <div id="container">
+    <div id="videoWrap">
+      <video id="video" autoplay playsinline></video>
+      <canvas id="overlay"></canvas>
+    </div>
+
+    <div id="ui">
+      <button id="btnCalibrate">Calibrate manually (click 4 corners TL,TR,BR,BL)</button>
+
+      <div class="row">
+        <button id="btnPlacePlayer">Place Player</button>
+        <button id="btnPlaceOpponent">Place Opponent</button>
+      </div>
+
+      <div class="row">
+        <button id="btnMove">Move Selected</button>
+        <button id="btnAttack">Attack</button>
+      </div>
+
+      <div class="row">
+        <button id="btnTick">Tick</button>
+        <button id="btnAuto">Auto Tick</button>
+      </div>
+
+      <label class="small">Sprites (optional)</label>
+      <input id="filePlayerSprite" type="file" accept="image/*"/>
+      <input id="fileOpponentSprite" type="file" accept="image/*"/>
+      <input id="fileMuzzle" type="file" accept="image/*"/>
+
+      <div class="row">
+        <button id="btnDrawObstacle">Draw Obstacle</button>
+        <button id="btnClearObstacles">Clear Obstacles</button>
+      </div>
+
+      <div class="row">
+        <button id="btnDelete">Delete Selected</button>
+        <button id="btnExport">Export State</button>
+      </div>
+      <input id="fileImport" type="file" accept=".json"/>
+
+      <div id="calNudge">
+        <button id="btnSnapRect" class="tiny">Snap Rectangle</button>
+        <button id="btnNudgeLeft" class="tiny">◀</button>
+        <button id="btnNudgeRight" class="tiny">▶</button>
+        <button id="btnNudgeUp" class="tiny">▲</button>
+        <button id="btnNudgeDown" class="tiny">▼</button>
+      </div>
+
+      <div id="status">Waiting for camera...</div>
+      <div id="log" aria-live="polite"></div>
+    </div>
+  </div>
+
+<script>
+/* Fixed final version — uses render() for RAF (no 'loop' calls) and robust homography solver (DLT + inverse-power)
+   Save as warhammer_solo_ar_final_fixed.html. On iPhone, host via HTTPS or localhost to allow getUserMedia.
+*/
+
+// small helpers
+function log(msg) {
+  const el = document.getElementById('log');
+  const t = new Date().toLocaleTimeString();
+  el.textContent = `[${t}] ${msg}\n` + el.textContent;
+}
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function dist(a,b){ return Math.hypot(a[0]-b[0], a[1]-b[1]); }
+
+// DLT + inverse power homography solver (robust for manual clicks)
+function normalizePoints(pts) {
+  const n = pts.length;
+  let cx=0, cy=0;
+  for (let p of pts) { cx += p.x; cy += p.y; }
+  cx /= n; cy /= n;
+  let meanDist = 0;
+  for (let p of pts) meanDist += Math.hypot(p.x - cx, p.y - cy);
+  meanDist /= n;
+  const s = (meanDist === 0) ? 1 : Math.SQRT2 / meanDist;
+  const T = [
+    [s,0, -s*cx],
+    [0,s, -s*cy],
+    [0,0,1]
+  ];
+  const out = pts.map(p => ({x: s*p.x - s*cx, y: s*p.y - s*cy}));
+  return {normPts: out, T};
+}
+function buildA(worldPts, imagePts) {
+  const A = [];
+  for (let i=0;i<4;i++){
+    const X = worldPts[i].x, Y = worldPts[i].y;
+    const u = imagePts[i].u, v = imagePts[i].v;
+    A.push([ X, Y, 1, 0, 0, 0, -u*X, -u*Y, -u ]);
+    A.push([ 0, 0, 0, X, Y, 1, -v*X, -v*Y, -v ]);
+  }
+  return A;
+}
+function transpose(M) { return M[0].map((_,i) => M.map(row => row[i])); }
+function matMul(A,B) {
+  const r = Array(A.length).fill(0).map(()=>Array(B[0].length).fill(0));
+  for (let i=0;i<A.length;i++) for (let k=0;k<A[0].length;k++) for (let j=0;j<B[0].length;j++)
+    r[i][j] += A[i][k]*B[k][j];
+  return r;
+}
+function computeATA(A) { return matMul(transpose(A), A); }
+function solveLinear(Morig, borig) {
+  const n = Morig.length;
+  const M = Morig.map(row => row.slice());
+  const b = borig.slice();
+  for (let i=0;i<n;i++){
+    let piv = i;
+    for (let r=i+1;r<n;r++) if (Math.abs(M[r][i]) > Math.abs(M[piv][i])) piv = r;
+    if (Math.abs(M[piv][i]) < 1e-15) continue;
+    if (piv !== i) { const tmp=M[i]; M[i]=M[piv]; M[piv]=tmp; let tb=b[i]; b[i]=b[piv]; b[piv]=tb;}
+    const div = M[i][i];
+    for (let c=i;c<n;c++) M[i][c] /= div;
+    b[i] /= div;
+    for (let r=0;r<n;r++) if (r !== i) {
+      const f = M[r][i];
+      if (Math.abs(f) < 1e-15) continue;
+      for (let c=i;c<n;c++) M[r][c] -= f * M[i][c];
+      b[r] -= f*b[i];
+    }
+  }
+  return b;
+}
+function inversePowerSmallest(ATA, iters = 110) {
+  const n = ATA.length;
+  let v = new Array(n).fill(0).map(()=>Math.random());
+  let norm = Math.hypot(...v); v = v.map(x=>x / (norm || 1));
+  for (let it=0; it<iters; it++){
+    const x = solveLinear(ATA, v);
+    const s = Math.hypot(...x);
+    if (s === 0) break;
+    for (let i=0;i<n;i++) v[i] = x[i] / s;
+  }
+  return v;
+}
+function computeHomography(worldPtsRaw, imagePtsRaw) {
+  const wn = normalizePoints(worldPtsRaw.map(p=>({x:p.x,y:p.y})));
+  const inorm = normalizePoints(imagePtsRaw.map(p=>({x:p.x,y:p.y})));
+  const worldN = wn.normPts;
+  const imgN = inorm.normPts.map(p=>({u:p.x, v:p.y}));
+  const A = buildA(worldN, imgN);
+  const ATA = computeATA(A);
+  const hvec = inversePowerSmallest(ATA, 110);
+  const Hn = [
+    [hvec[0], hvec[1], hvec[2]],
+    [hvec[3], hvec[4], hvec[5]],
+    [hvec[6], hvec[7], hvec[8]]
+  ];
+  function invert3(M) {
+    const a=M;
+    const A=a[0][0], B=a[0][1], C=a[0][2];
+    const D=a[1][0], E=a[1][1], F=a[1][2];
+    const G=a[2][0], H=a[2][1], I=a[2][2];
+    const det = A*(E*I - F*H) - B*(D*I - F*G) + C*(D*H - E*G);
+    if (Math.abs(det) < 1e-15) return null;
+    const inv = [
+      [(E*I - F*H)/det, (C*H - B*I)/det, (B*F - C*E)/det],
+      [(F*G - D*I)/det, (A*I - C*G)/det, (C*D - A*F)/det],
+      [(D*H - E*G)/det, (B*G - A*H)/det, (A*E - B*D)/det]
+    ];
+    return inv;
+  }
+  const T_w = wn.T, T_i = inorm.T;
+  const T_i_inv = invert3(T_i);
+  if (!T_i_inv) return null;
+  function mmul(A,B) { const r=Array(A.length).fill(0).map(()=>Array(B[0].length).fill(0)); for (let i=0;i<A.length;i++) for (let k=0;k<A[0].length;k++) for (let j=0;j<B[0].length;j++) r[i][j]+=A[i][k]*B[k][j]; return r; }
+  const Htmp = mmul(Hn, T_w);
+  const H = mmul(T_i_inv, Htmp);
+  const scale = H[2][2] || 1;
+  for (let i=0;i<3;i++) for (let j=0;j<3;j++) H[i][j] /= scale;
+  return H;
+}
+function applyHomography(H, pt) {
+  const x = pt.x, y = pt.y;
+  const u = H[0][0]*x + H[0][1]*y + H[0][2];
+  const v = H[1][0]*x + H[1][1]*y + H[1][2];
+  const w = H[2][0]*x + H[2][1]*y + H[2][2];
+  return {u: u/w, v: v/w};
+}
+function applyHomographyInv(H, pt) {
+  const a=H;
+  const inv = (function(){ const A=a[0][0], B=a[0][1], C=a[0][2], D=a[1][0], E=a[1][1], F=a[1][2], G=a[2][0], Hh=a[2][1], I=a[2][2]; const det = A*(E*I - F*Hh) - B*(D*I - F*G) + C*(D*Hh - E*G); if (Math.abs(det) < 1e-16) return null; return [ [(E*I - F*Hh)/det, (C*Hh - B*I)/det, (B*F - C*E)/det], [(F*G - D*I)/det, (A*I - C*G)/det, (C*D - A*F)/det], [(D*Hh - E*G)/det, (B*G - A*Hh)/det, (A*E - B*D)/det] ]; })();
+  if (!inv) return null;
+  const u = pt.u, v = pt.v;
+  const x = inv[0][0]*u + inv[0][1]*v + inv[0][2];
+  const y = inv[1][0]*u + inv[1][1]*v + inv[1][2];
+  const w = inv[2][0]*u + inv[2][1]*v + inv[2][2];
+  return {x: x/w, y: y/w};
+}
+
+// camera + canvas
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const ctx = overlay.getContext('2d');
+let videoW = 1280, videoH = 720;
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height:{ideal:720} }, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    videoW = video.videoWidth || 1280;
+    videoH = video.videoHeight || 720;
+    overlay.width = videoW;
+    overlay.height = videoH;
+    log(`Camera started ${videoW}x${videoH}`);
+    // start rendering loop explicitly using the defined render() function
+    requestAnimationFrame(render);
+  } catch (e) {
+    document.getElementById('status').textContent = 'Camera error: ' + (e && e.message ? e.message : e);
+    log('Camera error: ' + e);
+  }
+}
+
+// mapper/game state
+const MARKER_WORLD_POS = [
+  {x:0, y:0},
+  {x:48, y:0},
+  {x:48, y:36},
+  {x:0, y:36}
+];
+
+const mapper = { calibrated: false, imageCorners: [], H: null };
+const game = { units: [], nextId: 1, selectedId: null, autoTick: false };
+
+// embedded sample sprites
+const defaultSprites = {
+  player: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><circle cx='60' cy='40' r='22' fill='#2a9d2a'/><rect x='30' y='62' width='60' height='28' rx='6' fill='#31c34b'/></svg>`),
+  opponent: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><circle cx='60' cy='40' r='22' fill='#c92a2a'/><rect x='30' y='62' width='60' height='28' rx='6' fill='#ff6b6b'/></svg>`),
+  muzzle: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><polygon points='60,10 80,40 60,30 40,40' fill='orange'/></svg>`)
+};
+const spriteImages = { player: null, opponent: null, muzzle: null };
+['player','opponent','muzzle'].forEach(k=>{
+  const img = new Image();
+  img.onload = ()=> { spriteImages[k] = img; log(`${k} sample sprite ready`); };
+  img.src = defaultSprites[k];
+});
+function loadSpriteFromInput(inputEl, key) {
+  const f = inputEl.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = ()=> { spriteImages[key] = img; log(`${key} sprite uploaded`); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+document.getElementById('filePlayerSprite').addEventListener('change', (e)=> loadSpriteFromInput(e.target,'player'));
+document.getElementById('fileOpponentSprite').addEventListener('change', (e)=> loadSpriteFromInput(e.target,'opponent'));
+document.getElementById('fileMuzzle').addEventListener('change', (e)=> loadSpriteFromInput(e.target,'muzzle'));
+
+// units & obstacles
+function addUnit(team, worldPos, opts={}) {
+  const u = {
+    id: game.nextId++,
+    team,
+    pos: { x: worldPos.x, y: worldPos.y },
+    name: opts.name || (team==='player' ? 'Soldier' : 'Enemy'),
+    hp: opts.hp || (team==='player' ? 10 : 8),
+    maxHp: opts.maxHp || (team==='player' ? 10 : 8),
+    move: opts.move || (team==='player' ? 6 : 5),
+    range: opts.range || (team==='player' ? 12 : 10),
+    atk: opts.atk || 1,
+    spriteScale: opts.spriteScale || 0.10,
+    lastAction: ''
+  };
+  game.units.push(u);
+  log(`Added ${team} #${u.id} at ${u.pos.x.toFixed(1)},${u.pos.y.toFixed(1)}`);
+  return u;
+}
+function removeUnitById(id) {
+  const idx = game.units.findIndex(u=>u.id===id);
+  if (idx >= 0) { game.units.splice(idx,1); if (game.selectedId===id) game.selectedId=null; log('Deleted unit '+id); }
+}
+
+let obstacleDrawMode = false;
+let currentObstaclePts = [];
+let obstacles = [];
+function startDrawingObstacle(){ obstacleDrawMode=true; currentObstaclePts=[]; log('Draw obstacle: click vertices, dbl-click to finish'); }
+function finishCurrentObstacle(){ if (currentObstaclePts.length < 3){ log('Need 3+ vertices'); currentObstaclePts=[]; obstacleDrawMode=false; return; } const worldPoly = currentObstaclePts.map(p => imageToWorld({u:p.u, v:p.v})); obstacles.push(worldPoly); currentObstaclePts = []; obstacleDrawMode = false; log('Obstacle added'); }
+function clearObstacles(){ obstacles=[]; currentObstaclePts=[]; log('Obstacles cleared'); }
+
+// LOS helpers
+function onSeg(a,b,p){ return Math.min(a.x,b.x)-1e-9 <= p.x && p.x <= Math.max(a.x,b.x)+1e-9 && Math.min(a.y,b.y)-1e-9 <= p.y && p.y <= Math.max(a.y,b.y)+1e-9; }
+function isLeft(a,b,c){ return (b.x - a.x)*(c.y - a.y) - (c.x - a.x)*(b.y - a.y); }
+function pointInPolygon(pt, poly) {
+  let wn = 0;
+  for (let i=0;i<poly.length;i++){
+    const A = poly[i], B = poly[(i+1)%poly.length];
+    if (A.y <= pt.y) { if (B.y > pt.y && isLeft(A,B,pt) > 0) wn++; }
+    else { if (B.y <= pt.y && isLeft(A,B,pt) < 0) wn--; }
+  }
+  return wn !== 0;
+}
+function segSegIntersect(a,b,c,d) {
+  const cross = (p,q,r) => (q.x-p.x)*(r.y-p.y) - (q.y-p.y)*(r.x-p.x);
+  const c1 = cross(a,b,c), c2 = cross(a,b,d);
+  const c3 = cross(c,d,a), c4 = cross(c,d,b);
+  if (c1==0 && onSeg(a,b,c)) return true;
+  if (c2==0 && onSeg(a,b,d)) return true;
+  if (c3==0 && onSeg(c,d,a)) return true;
+  if (c4==0 && onSeg(c,d,b)) return true;
+  return (c1*c2 < 0) && (c3*c4 < 0);
+}
+function segmentIntersectsPolygon(a,b,poly) {
+  for (let i=0;i<poly.length;i++){
+    const c = poly[i], d = poly[(i+1)%poly.length];
+    if (segSegIntersect(a,b,c,d)) return true;
+  }
+  const mid = { x:(a.x+b.x)/2, y:(a.y+b.y)/2 };
+  if (pointInPolygon(mid, poly)) return true;
+  return false;
+}
+function hasLineOfSight(uA, uB) {
+  const A = {x:uA.pos.x, y:uA.pos.y}, B = {x:uB.pos.x, y:uB.pos.y};
+  for (const poly of obstacles) if (segmentIntersectsPolygon(A,B,poly)) return false;
+  return true;
+}
+
+// attack & muzzle
+const muzzleEffects = [];
+function spawnMuzzle(uImg, vImg) { muzzleEffects.push({u:uImg, v:vImg, t: performance.now(), dur: 220, s: 0.9 + Math.random()*0.8}); }
+function attackUnit(attacker) {
+  const target = nearestEnemy(attacker);
+  if (!target) { log('No enemy'); return; }
+  const d = Math.hypot(attacker.pos.x-target.pos.x, attacker.pos.y-target.pos.y);
+  if (d > attacker.range + 1e-6) { log('Target out of range'); attacker.lastAction='Out of range'; return; }
+  if (!hasLineOfSight(attacker, target)) { log('LOS blocked'); attacker.lastAction='LOS blocked'; return; }
+  const roll = randInt(1,6) + randInt(1,6) + attacker.atk;
+  let dmg = Math.max(0, roll - 7);
+  if (dmg===0 && roll>=8) dmg = 1;
+  dmg = Math.min(dmg, target.hp);
+  target.hp -= dmg;
+  attacker.lastAction = `Attacked ${target.id} (-${dmg})`;
+  log(`Unit ${attacker.id} attacked ${target.id} for ${dmg}`);
+  const mid = { x:(attacker.pos.x+target.pos.x)/2, y:(attacker.pos.y+target.pos.y)/2 };
+  const midImg = worldToImage(mid);
+  if (midImg) spawnMuzzle(midImg.u, midImg.v);
+}
+function nearestEnemy(unit) { const enemies = game.units.filter(u=>u.team !== unit.team && u.hp>0); if (!enemies.length) return null; enemies.sort((a,b)=> Math.hypot(a.pos.x-unit.pos.x,a.pos.y-unit.pos.y) - Math.hypot(b.pos.x-unit.pos.x,b.pos.y-unit.pos.y)); return enemies[0]; }
+function gameTick() {
+  for (const u of game.units) {
+    if (u.hp <= 0) continue;
+    if (u.team === 'opponent') {
+      const t = nearestEnemy(u);
+      if (!t) { u.lastAction = 'Idle'; continue; }
+      const d = Math.hypot(u.pos.x - t.pos.x, u.pos.y - t.pos.y);
+      if (d <= u.range) {
+        if (hasLineOfSight(u,t)) {
+          const roll = randInt(1,6)+randInt(1,6)+u.atk;
+          let dmg = Math.max(0, roll-7);
+          if (dmg===0 && roll>=8) dmg=1;
+          dmg = Math.min(dmg, t.hp);
+          t.hp -= dmg; u.lastAction = `Attacked ${t.id} (-${dmg})`;
+          const mid = { x:(u.pos.x+t.pos.x)/2, y:(u.pos.y+t.pos.y)/2 }; const midImg = worldToImage(mid);
+          if (midImg) spawnMuzzle(midImg.u, midImg.v);
+        } else { u.lastAction = 'LOS blocked'; }
+      } else {
+        const dx = t.pos.x - u.pos.x, dy = t.pos.y - u.pos.y;
+        const ang = Math.atan2(dy, dx);
+        const moveDist = Math.min(u.move, d);
+        u.pos.x += Math.cos(ang)*moveDist; u.pos.y += Math.sin(ang)*moveDist;
+        u.lastAction = `Moved towards ${t.id}`;
+      }
+    }
+  }
+}
+
+// world/image conversion helpers
+function worldToImage(worldPt) {
+  if (!mapper.calibrated) return null;
+  const p = applyHomography(mapper.H, {x:worldPt.x, y:worldPt.y});
+  p.u = clamp(p.u, 0, overlay.width); p.v = clamp(p.v, 0, overlay.height);
+  return p;
+}
+function imageToWorld(imgPt) {
+  if (!mapper.calibrated) return null;
+  const p = applyHomographyInv(mapper.H, {u:imgPt.u, v:imgPt.v});
+  return {x: p.x, y: p.y};
+}
+
+// rendering
+function render() {
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+
+  // obstacles
+  ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#333'; ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
+  for (const poly of obstacles) {
+    if (!poly || poly.length < 3) continue;
+    ctx.beginPath();
+    for (let i=0;i<poly.length;i++){
+      const p = worldToImage(poly[i]); if (!p) continue;
+      if (i===0) ctx.moveTo(p.u,p.v); else ctx.lineTo(p.u,p.v);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+  ctx.restore();
+
+  // in-progress obstacle
+  if (currentObstaclePts.length>0) {
+    ctx.save(); ctx.strokeStyle='#ff9900'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+    ctx.beginPath();
+    for (let i=0;i<currentObstaclePts.length;i++){ const p=currentObstaclePts[i]; if (i===0) ctx.moveTo(p.u,p.v); else ctx.lineTo(p.u,p.v); }
+    ctx.stroke(); ctx.restore();
+  }
+
+  // units
+  for (const u of game.units) {
+    if (u.hp <= 0) continue;
+    const pImg = worldToImage(u.pos);
+    if (!pImg) continue;
+    const base = Math.min(overlay.width, overlay.height);
+    const size = Math.round(base * u.spriteScale);
+    const sprite = (u.team==='player') ? spriteImages.player : spriteImages.opponent;
+    if (sprite) ctx.drawImage(sprite, pImg.u - size/2, pImg.v - size/2, size, size);
+    else { ctx.beginPath(); ctx.fillStyle = (u.team==='player') ? '#32c832' : '#c83232'; ctx.arc(pImg.u, pImg.v, 20, 0, Math.PI*2); ctx.fill(); }
+    if (game.selectedId === u.id) { ctx.beginPath(); ctx.lineWidth = 3; ctx.strokeStyle = '#ffff66'; ctx.arc(pImg.u, pImg.v, (sprite?size/2:22), 0, Math.PI*2); ctx.stroke(); }
+    const barW = 46; ctx.fillStyle = '#111'; ctx.fillRect(pImg.u - barW/2, pImg.v + (sprite?size/2:24), barW, 8);
+    ctx.fillStyle = '#2ecc40'; ctx.fillRect(pImg.u - barW/2, pImg.v + (sprite?size/2:24), Math.round(barW * Math.max(0,Math.min(1,u.hp/u.maxHp))), 8);
+    ctx.fillStyle = '#000'; ctx.font = '11px monospace'; ctx.fillText(`HP:${u.hp}`, pImg.u - barW/2, pImg.v + (sprite?size/2:24) + 22);
+  }
+
+  // calibration guides when not calibrated
+  if (!mapper.calibrated) {
+    ctx.save();
+    ctx.fillStyle = '#111';
+    mapper.imageCorners.forEach((p,i)=>{ ctx.beginPath(); ctx.arc(p.u,p.v,8,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='12px sans-serif'; ctx.fillText(String(i+1), p.u+10, p.v+4); ctx.fillStyle='#111'; });
+    if (mapper.imageCorners.length >= 2) {
+      const c = mapper.imageCorners;
+      if (c.length >= 2) {
+        const tl = c[0], tr = c[1];
+        const dx = tr.u - tl.u, dy = tr.v - tl.v;
+        const perpX = -dy * (36/48), perpY = dx * (36/48);
+        const projected = [
+          {u: tl.u, v: tl.v},
+          {u: tr.u, v: tr.v},
+          {u: tr.u + perpX, v: tr.v + perpY},
+          {u: tl.u + perpX, v: tl.v + perpY}
+        ];
+        ctx.save(); ctx.strokeStyle = '#0ea5e9'; ctx.lineWidth = 2; ctx.setLineDash([6,4]); ctx.beginPath();
+        projected.forEach((pp,i)=> i===0?ctx.moveTo(pp.u,pp.v):ctx.lineTo(pp.u,pp.v));
+        ctx.closePath(); ctx.stroke(); ctx.restore();
+      }
+    }
+    ctx.restore();
+  }
+
+  // muzzle effects
+  const now = performance.now();
+  for (let i=muzzleEffects.length-1;i>=0;i--){
+    const m = muzzleEffects[i];
+    const t = (now - m.t)/m.dur;
+    if (t > 1) { muzzleEffects.splice(i,1); continue; }
+    const alpha = 1 - t;
+    const scale = m.s * (1 + 0.25*(1-t));
+    if (spriteImages.muzzle) {
+      const w = 80 * scale, h = 80 * scale;
+      ctx.save(); ctx.globalAlpha = alpha; ctx.drawImage(spriteImages.muzzle, m.u - w/2, m.v - h/2, w, h); ctx.restore();
+    } else {
+      ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = 'rgba(255,170,50,0.95)'; ctx.beginPath(); ctx.arc(m.u,m.v,18*scale,0,Math.PI*2); ctx.fill(); ctx.restore();
+    }
+  }
+
+  // selected HUD
+  if (game.selectedId) {
+    const su = game.units.find(x=>x.id===game.selectedId);
+    if (su) {
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(8, overlay.height - 64, 340, 56);
+      ctx.fillStyle = '#fff'; ctx.font = '13px sans-serif';
+      ctx.fillText(`Selected: ${su.name}#${su.id} Team:${su.team} Pos:${su.pos.x.toFixed(1)},${su.pos.y.toFixed(1)}`, 14, overlay.height - 42);
+      ctx.fillText(`Last: ${su.lastAction || ''}`, 14, overlay.height - 20);
+    }
+  }
+
+  requestAnimationFrame(render);
+}
+
+// input handling (calibration, placing, selection)
+overlay.addEventListener('click', (ev)=>{
+  const rect = overlay.getBoundingClientRect();
+  const u = (ev.clientX - rect.left) * (overlay.width / rect.width);
+  const v = (ev.clientY - rect.top) * (overlay.height / rect.height);
+
+  if (obstacleDrawMode) {
+    currentObstaclePts.push({u:u, v:v});
+    log(`Obstacle vertex ${currentObstaclePts.length} added`);
+    return;
+  }
+
+  if (!mapper.calibrated && mapper.imageCorners.length < 4) {
+    mapper.imageCorners.push({u:u, v:v});
+    log(`Calibration corner ${mapper.imageCorners.length} clicked`);
+    if (mapper.imageCorners.length === 4) {
+      const worldPts = MARKER_WORLD_POS;
+      const imagePts = mapper.imageCorners.map(p=>({u:p.u, v:p.v}));
+      const H = computeHomography(worldPts.map(p=>({x:p.x,y:p.y})), imagePts);
+      if (H) { mapper.H = H; mapper.calibrated = true; document.getElementById('status').textContent = 'Calibrated (robust DLT)'; log('Calibration computed'); }
+      else { log('Calibration failed (singular)'); document.getElementById('status').textContent = 'Calibration failed — try again'; mapper.imageCorners = []; }
+    }
+    return;
+  }
+
+  if (mode === 'placePlayer') {
+    if (!mapper.calibrated) { log('Not calibrated'); return; }
+    const w = imageToWorld({u:u, v:v});
+    addUnit('player', w);
+    mode = null;
+    return;
+  } else if (mode === 'placeOpponent') {
+    if (!mapper.calibrated) { log('Not calibrated'); return; }
+    const w = imageToWorld({u:u, v:v});
+    addUnit('opponent', w);
+    mode = null;
+    return;
+  } else if (mode === 'move') {
+    if (!game.selectedId) { log('No unit selected'); mode=null; return; }
+    const w = imageToWorld({u:u, v:v});
+    const su = game.units.find(x=>x.id===game.selectedId);
+    if (!su) { log('Selected invalid'); mode=null; return; }
+    const d = Math.hypot(su.pos.x - w.x, su.pos.y - w.y);
+    if (d <= su.move + 1e-6) { su.pos = { x: w.x, y: w.y }; su.lastAction = 'Moved manually'; log(`Moved unit ${su.id}`); }
+    else { log(`Too far: dist ${d.toFixed(1)} > move ${su.move}`); }
+    mode = null;
+    return;
+  } else {
+    if (!mapper.calibrated) { log('Not calibrated'); return; }
+    const w = imageToWorld({u:u, v:v});
+    let best = null, bd = 1e9;
+    for (const uu of game.units) {
+      if (uu.hp <= 0) continue;
+      const d = Math.hypot(uu.pos.x - w.x, uu.pos.y - w.y);
+      if (d < 3.0 && d < bd) { bd = d; best = uu; }
+    }
+    if (best) { game.selectedId = best.id; log('Selected unit ' + best.id); } else { game.selectedId = null; log('Deselected'); }
+  }
+});
+
+overlay.addEventListener('dblclick', (ev)=>{
+  if (obstacleDrawMode && currentObstaclePts.length >= 3) finishCurrentObstacle();
+});
+
+// buttons
+document.getElementById('btnCalibrate').addEventListener('click', ()=>{ mapper.imageCorners = []; mapper.calibrated = false; mapper.H = null; document.getElementById('status').textContent = 'Click 4 corners TL,TR,BR,BL'; log('Calibration: click 4 corners'); });
+document.getElementById('btnSnapRect').addEventListener('click', ()=>{
+  if (mapper.imageCorners.length < 2) { log('Need at least 2 corners to snap'); return; }
+  const tl = mapper.imageCorners[0], tr = mapper.imageCorners[1];
+  const dx = tr.u - tl.u, dy = tr.v - tl.v;
+  const perpX = -dy * (36/48), perpY = dx * (36/48);
+  const br = {u: tr.u + perpX, v: tr.v + perpY};
+  const bl = {u: tl.u + perpX, v: tl.v + perpY};
+  mapper.imageCorners = [tl, tr, br, bl];
+  const worldPts = MARKER_WORLD_POS;
+  const imagePts = mapper.imageCorners.map(p=>({u:p.u, v:p.v}));
+  const H = computeHomography(worldPts.map(p=>({x:p.x,y:p.y})), imagePts);
+  if (H) { mapper.H = H; mapper.calibrated = true; document.getElementById('status').textContent='Calibrated (snapped)'; log('Snapped and calibrated'); }
+  else log('Snap failed (singular)');
+});
+document.getElementById('btnNudgeLeft').addEventListener('click', ()=> nudgeLastCorner(-6,0));
+document.getElementById('btnNudgeRight').addEventListener('click', ()=> nudgeLastCorner(6,0));
+document.getElementById('btnNudgeUp').addEventListener('click', ()=> nudgeLastCorner(0,-6));
+document.getElementById('btnNudgeDown').addEventListener('click', ()=> nudgeLastCorner(0,6));
+function nudgeLastCorner(dx,dy) {
+  if (!mapper.imageCorners.length) { log('No corners to nudge'); return; }
+  const i = mapper.imageCorners.length - 1;
+  mapper.imageCorners[i].u += dx; mapper.imageCorners[i].v += dy;
+  log('Nudged corner '+(i+1));
+  if (mapper.imageCorners.length === 4) {
+    const H = computeHomography(MARKER_WORLD_POS.map(p=>({x:p.x,y:p.y})), mapper.imageCorners.map(p=>({u:p.u,v:p.v})));
+    if (H) { mapper.H = H; mapper.calibrated = true; document.getElementById('status').textContent='Calibrated (nudged)'; log('Recomputed homography'); }
+  }
+}
+document.getElementById('btnPlacePlayer').addEventListener('click', ()=>{ mode='placePlayer'; document.getElementById('status').textContent='Click canvas to place player'; });
+document.getElementById('btnPlaceOpponent').addEventListener('click', ()=>{ mode='placeOpponent'; document.getElementById('status').textContent='Click canvas to place opponent'; });
+document.getElementById('btnMove').addEventListener('click', ()=>{ mode='move'; document.getElementById('status').textContent='Click destination to move selected unit'; });
+document.getElementById('btnAttack').addEventListener('click', ()=>{ if (!game.selectedId) { log('No selection'); return; } const su = game.units.find(x=>x.id===game.selectedId); if (!su) { log('Invalid selection'); return; } attackUnit(su); });
+document.getElementById('btnTick').addEventListener('click', ()=>{ gameTick(); log('Tick'); });
+document.getElementById('btnAuto').addEventListener('click', ()=>{ game.autoTick = !game.autoTick; if (game.autoTick) { game._autoId = setInterval(()=>{ gameTick(); }, 700); log('Auto tick on'); } else { clearInterval(game._autoId); game._autoId = null; log('Auto tick off'); }});
+document.getElementById('btnDrawObstacle').addEventListener('click', ()=>{ startDrawingObstacle(); });
+document.getElementById('btnClearObstacles').addEventListener('click', ()=>{ clearObstacles(); });
+document.getElementById('btnDelete').addEventListener('click', ()=>{ if (game.selectedId) removeUnitById(game.selectedId); else log('No selection'); });
+document.getElementById('btnExport').addEventListener('click', ()=> { const data = { units: game.units, obstacles: obstacles, nextId: game.nextId }; const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'wargame_export.json'; a.click(); URL.revokeObjectURL(url); log('Exported state'); });
+document.getElementById('fileImport').addEventListener('change', (ev)=> { const f = ev.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (e) => { try { const parsed = JSON.parse(e.target.result); if (parsed.units) { game.units = parsed.units; game.nextId = parsed.nextId || (game.units.reduce((m,u)=>Math.max(m,u.id),0)+1); obstacles = parsed.obstacles || []; log('Imported state'); } else log('Invalid JSON'); } catch (err) { log('Import parse error: ' + err); } }; r.readAsText(f); });
+document.getElementById('filePlayerSprite').addEventListener('change', (e)=> loadSpriteFromInput(e.target, 'player'));
+document.getElementById('fileOpponentSprite').addEventListener('change', (e)=> loadSpriteFromInput(e.target, 'opponent'));
+document.getElementById('fileMuzzle').addEventListener('change', (e)=> loadSpriteFromInput(e.target, 'muzzle'));
+
+// sprite loader
+function loadSpriteFromInput(inputEl, key) {
+  const f = inputEl.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = ()=> { spriteImages[key] = img; log(`${key} sprite loaded`); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+
+// start camera and kick off render (no undefined loop)
+startCamera();
+
+</script>
+</body>
+</html>
