@@ -1,14 +1,16 @@
 {
-  "message": "📅 Join us for our next lunch speaker series: <b>Precision Timekeeping and National Defense</b> by Bill Regli.<br/>🕰️<b>11:45AM Friday, November 21th at the League House</b><br/>",
+  {
+  "message": "📅 Join us for our next lunch speaker series topic: <b>Precision Timekeeping and National Defense</b> by Bill Regli.<br/>🕰️<b>11:45AM Friday, November 21th at the League House</b><br/>",
   "link": "https://member.unionleague.org/members/calendar/event/66853/2025-11-21/reserve",
   "linkText": "Click here to sign up",
   "startDate": "2025-11-01",
   "endDate": "2025-11-21"
-}
-{
+ }
+ {
   "message": "📅 Our next ULHorology event is coming soon! Join us for an evening of watch talk with <b>Jack Forster</b> from The 1916 Company.<br/>🕰️<b>6:00PM Thursday, September 25th at the League House</b><br/>",
   "link": "https://member.unionleague.org/members/calendar/event/59917/2025-09-25",
   "linkText": "Click here to sign up",
   "startDate": "2025-08-01",
   "endDate": "2025-09-25"
+ }
 }
