@@ -270,28 +270,28 @@
   </script>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const toast = document.getElementById('ulh-toast');
-      const toastMessage = document.getElementById('ulh-toast-message');
-      const closeBtn = document.querySelector('.ulh-toast-close');
+  document.addEventListener('DOMContentLoaded', function () {
+    const toast = document.getElementById('ulh-toast');
+    const toastMessage = document.getElementById('ulh-toast-message');
+    const closeBtn = document.querySelector('.ulh-toast-close');
 
-      fetch('toast.json')
-        .then(response => {
-          if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-          return response.json();
-        })
-        .then(data => {
-          console.log("Toast JSON loaded:", data);
-          const today = new Date();
-          const startDate = new Date(data.startDate);
-          const endDate = new Date(data.endDate);
+    fetch('toast.json')
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        return response.json();
+      })
+      .then(data => {
+        console.log("Toast JSON loaded:", data);
+        const today = new Date();
 
-          console.log("Today:", today.toISOString());
-          console.log("Start Date:", startDate.toISOString());
-          console.log("End Date:", endDate.toISOString());
+        let toastShown = false; // To prevent multiple toasts
 
-          if (today >= startDate && today <= endDate) {
-            toastMessage.innerHTML = `${data.message} <a href="${data.link}" target="_blank" rel="noopener noreferrer">${data.linkText}</a>`;
+        data.forEach(event => {
+          const startDate = new Date(event.startDate);
+          const endDate = new Date(event.endDate);
+
+          if (today >= startDate && today <= endDate && !toastShown) {
+            toastMessage.innerHTML = `${event.message} <a href="${event.link}" target="_blank" rel="noopener noreferrer">${event.linkText}</a>`;
             setTimeout(() => {
               toast.classList.add('show');
             }, 200);
@@ -304,14 +304,19 @@
               toast.classList.remove('show');
               clearTimeout(hideTimeout);
             });
-          } else {
-            console.log("Toast not shown — outside date range.");
+
+            toastShown = true; // Prevent showing additional toasts
           }
-        })
-        .catch(err => {
-          console.error('Error loading toast.json:', err);
         });
-    });
-  </script>
+
+        if (!toastShown) {
+          console.log("No current events to show in the toast.");
+        }
+      })
+      .catch(err => {
+        console.error('Error loading toast.json:', err);
+      });
+  });
+</script>
 </body>
 </html>
