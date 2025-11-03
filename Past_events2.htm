@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Past ULHC Events</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: white;
+    }
+
+    .container {
+      padding: 1rem;
+      padding-bottom: 80px; /* space for Back button */
+    }
+
+    .image-block {
+      margin-bottom: 2rem;
+      position: relative;
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+      /* NEW: Added text-align left for overall block, ensuring content aligns left */
+      text-align: left;
+    }
+
+    .image-title {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+      text-align: left;
+    }
+
+    /* NEW: Styles for the slideshow container */
+    .slideshow-container {
+      position: relative;
+      background: white; /* Inherits background from old .image-container */
+      border: 2px solid black; /* Inherits border from old .image-container */
+      border-radius: 4px; /* Inherits border-radius from old .image-container */
+      overflow: hidden;
+      margin: auto;
+      box-sizing: border-box; /* Ensures padding/border is included in element's total width and height */
+    }
+
+    /* NEW: Styles for individual slides within the slideshow */
+    .mySlides {
+      display: none; /* Hide slides by default, JavaScript will manage visibility */
+    }
+
+    .image-container {
+      position: relative;
+      /* OLD: background, border, border-radius moved to .slideshow-container */
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .image-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .zoom-icon {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      pointer-events: none;
+      z-index: 2; /* NEW: Ensure zoom icon is above slideshow arrows */
+    }
+
+    .image-description {
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      color: #ccc;
+      text-align: left;
+    }
+
+    .back-button {
+      text-align: center;
+      position: fixed;
+      bottom: calc(1rem + 10px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+    }
+
+    .back-button a {
+      text-decoration: none;
+      color: white;
+      background-color: #C4A675;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .back-button a:hover {
+      background-color: #E6C897;
+    }
+
+    /* Modal Overlay */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border: 4px solid white;
+      border-radius: 8px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 1001; /* NEW: Ensure close button is above the modal image */
+    }
+
+    /* NEW: Navigation arrows for slideshows */
+    .prev, .next {
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      width: auto;
+      padding: 16px;
+      margin-top: -22px;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+      transition: 0.6s ease;
+      border-radius: 0 3px 3px 0;
+      user-select: none;
+      background-color: rgba(0,0,0,0.4);
+      z-index: 1; /* NEW: Ensure arrows are above images but below zoom icon/modal close */
+    }
+
+    /* Position the "next button" to the right */
+    .next {
+      right: 0;
+      border-radius: 3px 0 0 3px;
+    }
+
+    /* On hover, add a black background with a little more opacity */
+    .prev:hover, .next:hover {
+      background-color: rgba(0,0,0,0.8);
+    }
+
+    /* NEW: Fading animation for slides */
+    .fade {
+      animation-name: fade;
+      animation-duration: 1.5s;
+    }
+
+    @keyframes fade {
+      from {opacity: .4}
+      to {opacity: 1}
+    }
+
+    /* Mobile behavior */
+    @media (max-width: 768px) {
+      .image-block {
+        width: 90%;
+      }
+
+      .zoom-icon {
+        display: none;
+      }
+
+      .image-container {
+        cursor: default;
+        /* OLD: background: black; Removed, now slideshow-container handles background implicitly */
+      }
+      /* NEW: Hide navigation arrows on smaller screens for cleaner look */
+      .prev, .next {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- NEW: Example Event Block with MULTIPLE Images -->
+  <div class="image-block">
+    <div class="image-title">6/5/2025: ULHC X RedBar X The 1916 Company - Multiple Images</div>
+    <div class="slideshow-container">
+      <div class="mySlides fade">
+        <div class="image-container" data-image="/images/events/20250605_RedBar_1916.jpg">
+          <img src="/images/events/20250605_RedBar_1916.jpg" alt="2025-06-05 Event Image 1">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="image-container" data-image="https://via.placeholder.com/600x400/FF0000/FFFFFF?text=Event+Image+2">
+          <img src="https://via.placeholder.com/600x400/FF0000/FFFFFF?text=Event+Image+2" alt="2025-06-05 Event Image 2">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="image-container" data-image="https://via.placeholder.com/600x400/0000FF/FFFFFF?text=Event+Image+3">
+          <img src="https://via.placeholder.com/600x400/0000FF/FFFFFF?text=Event+Image+3" alt="2025-06-05 Event Image 3">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <!-- NEW: Prev and Next buttons for slideshow navigation -->
+      <a class="prev">&#10094;</a>
+      <a class="next">&#10095;</a>
+    </div>
+    <div class="image-description">
+      Members of the Union League Horology Club gather for their first unofficial event, generously hosted by RedBar Philadelphia at The 1916 Company (1529 Walnut Street) on Wednesday, June 5th. The private evening featured an elegant spread of light bites and drinks, with guests enjoying hands-on access to an array of exceptional timepieces. The event fostered lively conversation and camaraderie among watch enthusiasts in a welcoming and refined setting.
+    </div>
+  </div>
+
+  <!-- NEW: Example Event Block with a SINGLE Image (structure kept consistent for future expansion) -->
+  <div class="image-block">
+    <div class="image-title">Another Event (Single Image)</div>
+    <div class="slideshow-container">
+      <div class="mySlides fade">
+        <div class="image-container" data-image="https://via.placeholder.com/600x400/00FF00/000000?text=Single+Event+Image">
+          <img src="https://via.placeholder.com/600x400/00FF00/000000?text=Single+Event+Image" alt="Another Event Image">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+      <!-- Arrows are included for structural consistency, but JavaScript will hide them if only one slide is present. -->
+      <a class="prev">&#10094;</a>
+      <a class="next">&#10095;</a>
+    </div>
+    <div class="image-description">
+      This is a description for another event, which only has one image. The structure is consistent, allowing for easy expansion.
+    </div>
+  </div>
+
+  <!-- Add more image-blocks here if needed following the new structure -->
+</div>
+
+<div class="back-button">
+  <a href="index.html#features">Back</a>
+</div>
+
+<!-- Modal for enlarged image -->
+<div class="modal" id="imageModal">
+  <span class="modal-close" id="modalClose">&times;</span>
+  <img id="modalImage" src="" alt="Enlarged view">
+</div>
+
+<script>
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalClose = document.getElementById('modalClose');
+
+  // NEW: Array to keep track of the current slide index for each slideshow on the page
+  const slideIndexes = [];
+  const slideshows = document.querySelectorAll('.slideshow-container');
+
+  // NEW: Initialize each slideshow found on the page
+  slideshows.forEach((slideshow, index) => {
+    slideIndexes[index] = 1; // Start each slideshow at its first image
+    const slides = slideshow.querySelectorAll('.mySlides');
+
+    // NEW: If there's only one or no slides, hide the navigation arrows for that specific slideshow
+    if (slides.length <= 1) {
+      slideshow.querySelector('.prev').style.display = 'none';
+      slideshow.querySelector('.next').style.display = 'none';
+    } else {
+      // Add event listeners for prev/next buttons for each slideshow
+      slideshow.querySelector('.prev').addEventListener('click', () => {
+        plusSlides(-1, index);
+      });
+      slideshow.querySelector('.next').addEventListener('click', () => {
+        plusSlides(1, index);
+      });
+    }
+
+    showSlides(1, index); // Display the first slide for each slideshow on page load
+  });
+
+  // NEW: Function to change slides by a given number (n) for a specific slideshow
+  function plusSlides(n, slideshowIndex) {
+    showSlides(slideIndexes[slideshowIndex] += n, slideshowIndex);
+  }
+
+  // NEW: Function to display a specific slide (n) for a given slideshow (slideshowIndex)
+  function showSlides(n, slideshowIndex) {
+    let i;
+    const currentSlideshow = slideshows[slideshowIndex];
+    const slides = currentSlideshow.querySelectorAll('.mySlides');
+
+    if (slides.length === 0) return; // Exit if no slides are found in this slideshow
+
+    // Loop slides: if past last slide, go to first; if before first, go to last
+    if (n > slides.length) {
+      slideIndexes[slideshowIndex] = 1;
+    }
+    if (n < 1) {
+      slideIndexes[slideshowIndex] = slides.length;
+    }
+
+    // Hide all slides in the current slideshow
+    for (i = 0; i < slides.length; i++) {
+      slides[i].style.display = 'none';
+    }
+
+    // Display the current slide
+    slides[slideIndexes[slideshowIndex] - 1].style.display = 'block';
+  }
+
+
+  // OLD (modified): Modal logic to open enlarged images
+  // Listen for clicks on ALL .image-container elements, including those inside slideshows
+  document.querySelectorAll('.image-container').forEach(container => {
+    container.addEventListener('click', () => {
+      // Disable zoom on mobile devices (as per original code)
+      if (window.innerWidth <= 768) return;
+
+      // Get the image source from the data-image attribute of the clicked container
+      const src = container.getAttribute('data-image');
+      modalImage.src = src;
+      modal.classList.add('active'); // Show the modal
+    });
+  });
+
+  // Event listener for the modal close button
+  modalClose.addEventListener('click', () => {
+    modal.classList.remove('active'); // Hide the modal
+    modalImage.src = ''; // Clear the image source
+  });
+
+  // Event listener to close the modal if clicked outside the image
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) { // Check if the click was directly on the modal background
+      modal.classList.remove('active');
+      modalImage.src = '';
+    }
+  });
+</script>
+
+</body>
+</html>
