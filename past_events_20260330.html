@@ -13,6 +13,11 @@
       color: white;
     }
 
+    :root {
+      /* NEW: Cap gallery media height so the active image/video fits within the viewport */
+      --gallery-max-height: calc(100vh - 240px);
+    }
+
     .container {
       padding: 1rem;
       padding-bottom: 80px; /* space for Back button */
@@ -54,15 +59,26 @@
       overflow: hidden;
       cursor: pointer;
       background: black;
+
+      /* NEW: Keep gallery media from exceeding the browser viewport height */
+      height: min(70vh, var(--gallery-max-height));
+      min-height: 260px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* CHANGED: Shared sizing for both img and video */
     .media-container img,
     .media-container video {
       width: 100%;
-      height: auto;
+      height: 100%;
       display: block;
       background: black;
+
+      /* NEW: Scale media to fit inside the fixed-height gallery area without cropping */
+      object-fit: contain;
+      max-height: 100%;
     }
 
     .zoom-icon {
@@ -139,6 +155,7 @@
       max-height: 90%;
       border: 4px solid white;
       border-radius: 8px;
+      object-fit: contain;
     }
 
     .modal-close {
@@ -293,6 +310,11 @@
     }
 
     @media (max-width: 768px) {
+      :root {
+        /* NEW: Slightly larger allowance on mobile while still fitting in viewport */
+        --gallery-max-height: calc(100vh - 210px);
+      }
+
       .image-block {
         width: 90%;
       }
@@ -303,6 +325,8 @@
 
       .media-container {
         cursor: default;
+        height: min(62vh, var(--gallery-max-height));
+        min-height: 220px;
       }
 
       .prev, .next {
@@ -400,7 +424,7 @@
         </div>
       </div>
 
-    <div class="mySlides fade">
+      <div class="mySlides fade">
         <div class="media-container video-wrapper" data-type="video">
           <div class="video-badge">VIDEO</div>
 
@@ -557,8 +581,6 @@
           </div>
         </div>
       </div>
-      
-     
 
       <a class="prev">&#10094;</a>
       <a class="next">&#10095;</a>
@@ -568,7 +590,6 @@
     </div>
   </div>
 
-  
   <div class="image-block">
     <div class="image-title">3/21/2026: 160th Horological Society of New York Gala</div>
     <div class="slideshow-container">
