@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Past ULHC Events</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      font-family: sans-serif;
+      color: white;
+    }
+
+    .container {
+      padding: 1rem;
+      padding-bottom: 80px; /* space for Back button */
+    }
+
+    .image-block {
+      margin-bottom: 2rem;
+      position: relative;
+      width: 50%;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    .image-title {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+      text-align: left;
+    }
+
+    .slideshow-container {
+      position: relative;
+      background: white;
+      border: 2px solid black;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: auto;
+      box-sizing: border-box;
+    }
+
+    .mySlides {
+      display: none;
+    }
+
+    /* CHANGED: Renamed/expanded media container so it can hold either images or videos */
+    .media-container {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      background: black;
+    }
+
+    /* CHANGED: Shared sizing for both img and video */
+    .media-container img,
+    .media-container video {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: black;
+    }
+
+    .zoom-icon {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .image-description {
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      color: #ccc;
+      text-align: left;
+    }
+
+    .back-button {
+      text-align: center;
+      position: fixed;
+      bottom: calc(1rem + 10px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+    }
+
+    .back-button a {
+      text-decoration: none;
+      color: white;
+      background-color: #C4A675;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .back-button a:hover {
+      background-color: #E6C897;
+    }
+
+    /* Modal Overlay */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .modal img {
+      max-width: 90%;
+      max-height: 90%;
+      border: 4px solid white;
+      border-radius: 8px;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 1001;
+    }
+
+    .prev, .next {
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      width: auto;
+      padding: 16px;
+      margin-top: -22px;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+      transition: 0.6s ease;
+      border-radius: 0 3px 3px 0;
+      user-select: none;
+      background-color: rgba(0,0,0,0.4);
+      z-index: 3;
+    }
+
+    .next {
+      right: 0;
+      border-radius: 3px 0 0 3px;
+    }
+
+    .prev:hover, .next:hover {
+      background-color: rgba(0,0,0,0.8);
+    }
+
+    .fade {
+      animation-name: fade;
+      animation-duration: 1.5s;
+    }
+
+    @keyframes fade {
+      from {opacity: .4}
+      to {opacity: 1}
+    }
+
+    /* NEW: Video overlay controls */
+    .video-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    /* NEW: Center play button like YouTube-style thumbnail overlay */
+    .video-play-button {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      font-size: 28px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .video-play-button:hover {
+      background: rgba(0, 0, 0, 0.82);
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    /* NEW: Bottom controls bar that appears on hover or pause */
+    .video-controls-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0));
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    .video-control-button {
+      border: none;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+    }
+
+    .video-control-button:hover {
+      background: rgba(0, 0, 0, 0.82);
+    }
+
+    /* NEW: Show bottom controls on hover or when paused */
+    .video-wrapper.show-overlay .video-controls-overlay,
+    .video-wrapper:hover .video-controls-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* NEW: Hide play button while playing */
+    .video-wrapper.playing .video-play-button {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* NEW: When paused or not started, keep the play button visible */
+    .video-wrapper.paused .video-play-button,
+    .video-wrapper.not-started .video-play-button {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* NEW: Slight indicator that this is a video */
+    .video-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.65);
+      color: white;
+      font-size: 0.8rem;
+      line-height: 1;
+      padding: 0.4rem 0.55rem;
+      border-radius: 999px;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+      .image-block {
+        width: 90%;
+      }
+
+      .zoom-icon {
+        display: none;
+      }
+
+      .media-container {
+        cursor: default;
+      }
+
+      .prev, .next {
+        display: none;
+      }
+
+      /* NEW: Keep video controls visible enough on touch devices */
+      .video-controls-overlay {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .video-play-button {
+        width: 64px;
+        height: 64px;
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="image-block">
+    <div class="image-title">3/21/2026: 160th Horological Society of New York Gala</div>
+    <div class="slideshow-container">
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260321_HSNY_1.jpg">
+          <img src="/images/events/20260321_HSNY_1.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+      
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260321_HSNY_2.jpg">
+          <img src="/images/events/20260321_HSNY_2.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260321_HSNY_3.jpg">
+          <img src="/images/events/20260321_HSNY_3.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260321_HSNY_4.jpg">
+          <img src="/images/events/20260321_HSNY_4.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260321_HSNY_5.png">
+          <img src="/images/events/20260321_HSNY_5.png" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <!-- NEW: Example video slide -->
+      <!--
+        To add an iPhone video, use this structure.
+        Replace the file path with your own .MOV or .MP4 file.
+        poster is optional, because the script below will try to generate a thumbnail
+        from the video automatically if no poster is provided.
+      -->
+      <div class="mySlides fade">
+        <div class="media-container video-wrapper" data-type="video">
+          <div class="video-badge">VIDEO</div>
+
+          <video
+            preload="metadata"
+            playsinline
+            webkit-playsinline
+            class="gallery-video"
+            data-src="/images/events/20260321_HSNY_video_1.MOV"
+            poster=""
+          >
+            <source src="/images/events/20260321_HSNY_video_1.MOV" type="video/quicktime">
+            <source src="/images/events/20260321_HSNY_video_1.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+
+          <div class="video-overlay">
+            <button class="video-play-button" aria-label="Play video">▶</button>
+            <div class="video-controls-overlay">
+              <button class="video-control-button fullscreen-button" aria-label="Enter fullscreen">⛶</button>
+              <button class="video-control-button exit-fullscreen-button" aria-label="Exit fullscreen" style="display: none;">🗗</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a class="prev">&#10094;</a>
+      <a class="next">&#10095;</a>
+    </div>
+    <div class="image-description">
+      ULHC Members attended the HSNY 2026 Gala at The Plaza Hotel in New York City, an elegant evening celebrating horological excellence. The event honored F.P. Journe with a Lifetime Achievement Award, recognizing his extraordinary contributions to independent watchmaking and innovation. Members enjoyed a memorable night among collectors, craftsmen, and industry leaders in one of the city’s most iconic venues.
+    </div>
+  </div>
+
+  <div class="image-block">
+    <div class="image-title">2/26/2026: RGM x UL America250 Watch Event</div>
+    <div class="slideshow-container">
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_0.png">
+          <img src="/images/events/20260226_RGM_0.png" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+      
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_1.jpg">
+          <img src="/images/events/20260226_RGM_1.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+      
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_2.jpg">
+          <img src="/images/events/20260226_RGM_2.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_3.jpg">
+          <img src="/images/events/20260226_RGM_3.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_4.jpg">
+          <img src="/images/events/20260226_RGM_4.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_5.jpg">
+          <img src="/images/events/20260226_RGM_5.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_6.jpg">
+          <img src="/images/events/20260226_RGM_6.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_7.jpg">
+          <img src="/images/events/20260226_RGM_7.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_8.jpg">
+          <img src="/images/events/20260226_RGM_8.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_9.jpg">
+          <img src="/images/events/20260226_RGM_9.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+            
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_10.jpg">
+          <img src="/images/events/20260226_RGM_10.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+            
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_11.jpg">
+          <img src="/images/events/20260226_RGM_11.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+            
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_12.jpg">
+          <img src="/images/events/20260226_RGM_12.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+            
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20260226_RGM_13.jpg">
+          <img src="/images/events/20260226_RGM_13.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <a class="prev">&#10094;</a>
+      <a class="next">&#10095;</a>
+    </div>
+    <div class="image-description">
+      Members gathered to hear from our special guest speaker, Roland G. Murphy, founder and master watchmaker of RGM Watches, widely regarded as one of America’s leading independent watchmakers. His work has been recognized internationally for its technical excellence, traditional hand finishing, and steadfast commitment to American manufacturing. Mr. Murphy presented an engaging talk on the history of American watchmaking, exploring its legacy of innovation, precision, and independence from the 19th century to today.
+    </div>
+  </div>
+
+  <div class="image-block">
+    <div class="image-title">9/25/2025: Fireside Chat with Jack Forster & Erik Widhson</div>
+    <div class="slideshow-container">
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250925_JackForster_1.jpg">
+          <img src="/images/events/20250925_JackForster_1.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250925_JackForster_2.jpg">
+          <img src="/images/events/20250925_JackForster_2.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250925_JackForster_3.jpg">
+          <img src="/images/events/20250925_JackForster_3.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250925_JackForster_4.jpg">
+          <img src="/images/events/20250925_JackForster_4.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250925_JackForster_5.jpg">
+          <img src="/images/events/20250925_JackForster_5.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250925_JackForster_6.jpg">
+          <img src="/images/events/20250925_JackForster_6.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250925_JackForster_7.jpg">
+          <img src="/images/events/20250925_JackForster_7.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250925_JackForster_8.jpg">
+          <img src="/images/events/20250925_JackForster_8.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250925_JackForster_9.jpg">
+          <img src="/images/events/20250925_JackForster_9.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <a class="prev">&#10094;</a>
+      <a class="next">&#10095;</a>
+    </div>
+    <div class="image-description">
+      Members gathered to hear from our special guest speaker, Jack Forster, one of the most respected voices in watch journalism. Jack has spent over two decades immersed in every aspect of watches, clocks, and watchmaking. His career has included leadership roles at Revolution Magazine and HODINKEE, where he served as Editor-in-Chief, and today he is the Global Editorial Director at WatchBox. His work has appeared in American Express Departures, and Vanity Fair, and he is the author of Cartier Time Art: Mechanics of Passion.
+    </div>
+  </div>
+
+  <div class="image-block">
+    <div class="image-title">6/5/2025: ULHC X RedBar X The 1916 Company</div>
+    <div class="slideshow-container">
+      <div class="mySlides fade">
+        <div class="media-container image-container" data-type="image" data-image="/images/events/20250605_RedBar_1916.jpg">
+          <img src="/images/events/20250605_RedBar_1916.jpg" alt="">
+          <div class="zoom-icon">🔍</div>
+        </div>
+      </div>
+
+      <a class="prev">&#10094;</a>
+      <a class="next">&#10095;</a>
+    </div>
+    <div class="image-description">
+      Members of the Union League Horology Club gather for their first unofficial event, generously hosted by RedBar Philadelphia at The 1916 Company (1529 Walnut Street) on Wednesday, June 5th. The private evening featured an elegant spread of light bites and drinks, with guests enjoying hands-on access to an array of exceptional timepieces. The event fostered lively conversation and camaraderie among watch enthusiasts in a welcoming and refined setting.
+    </div>
+  </div>
+</div>
+
+<div class="back-button">
+  <a href="index.html#features">Back</a>
+</div>
+
+<!-- Modal for enlarged image -->
+<div class="modal" id="imageModal">
+  <span class="modal-close" id="modalClose">&times;</span>
+  <img id="modalImage" src="" alt="Enlarged view">
+</div>
+
+<script>
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalClose = document.getElementById('modalClose');
+
+  const slideIndexes = [];
+  const slideshows = document.querySelectorAll('.slideshow-container');
+
+  slideshows.forEach((slideshow, index) => {
+    slideIndexes[index] = 1;
+    const slides = slideshow.querySelectorAll('.mySlides');
+
+    if (slides.length <= 1) {
+      slideshow.querySelector('.prev').style.display = 'none';
+      slideshow.querySelector('.next').style.display = 'none';
+    } else {
+      slideshow.querySelector('.prev').addEventListener('click', (e) => {
+        e.stopPropagation();
+        pauseAllVideos();
+        plusSlides(-1, index);
+      });
+
+      slideshow.querySelector('.next').addEventListener('click', (e) => {
+        e.stopPropagation();
+        pauseAllVideos();
+        plusSlides(1, index);
+      });
+    }
+
+    showSlides(1, index);
+  });
+
+  function plusSlides(n, slideshowIndex) {
+    showSlides(slideIndexes[slideshowIndex] += n, slideshowIndex);
+  }
+
+  function showSlides(n, slideshowIndex) {
+    let i;
+    const currentSlideshow = slideshows[slideshowIndex];
+    const slides = currentSlideshow.querySelectorAll('.mySlides');
+
+    if (slides.length === 0) return;
+
+    if (n > slides.length) {
+      slideIndexes[slideshowIndex] = 1;
+    }
+    if (n < 1) {
+      slideIndexes[slideshowIndex] = slides.length;
+    }
+
+    for (i = 0; i < slides.length; i++) {
+      slides[i].style.display = 'none';
+    }
+
+    slides[slideIndexes[slideshowIndex] - 1].style.display = 'block';
+  }
+
+  /* CHANGED: Image modal logic now only applies to image slides, not videos */
+  document.querySelectorAll('.image-container[data-type="image"]').forEach(container => {
+    container.addEventListener('click', () => {
+      if (window.innerWidth <= 768) return;
+
+      const src = container.getAttribute('data-image');
+      modalImage.src = src;
+      modal.classList.add('active');
+    });
+  });
+
+  modalClose.addEventListener('click', () => {
+    modal.classList.remove('active');
+    modalImage.src = '';
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+      modalImage.src = '';
+    }
+  });
+
+  /* NEW: Pause all videos helper */
+  function pauseAllVideos() {
+    document.querySelectorAll('.gallery-video').forEach(video => {
+      video.pause();
+    });
+  }
+
+  /* NEW: Video setup */
+  document.querySelectorAll('.video-wrapper').forEach(wrapper => {
+    const video = wrapper.querySelector('video');
+    const playButton = wrapper.querySelector('.video-play-button');
+    const fullscreenButton = wrapper.querySelector('.fullscreen-button');
+    const exitFullscreenButton = wrapper.querySelector('.exit-fullscreen-button');
+
+    wrapper.classList.add('not-started', 'paused');
+
+    /* NEW: Show browser-native controls when hovering or when paused,
+       similar to the feel of YouTube controls appearing when needed */
+    function updateControlsVisibility() {
+      const shouldShowControls = wrapper.matches(':hover') || video.paused;
+      video.controls = shouldShowControls;
+      wrapper.classList.toggle('show-overlay', shouldShowControls);
+    }
+
+    function setPlayingState() {
+      wrapper.classList.remove('paused', 'not-started');
+      wrapper.classList.add('playing');
+      updateControlsVisibility();
+    }
+
+    function setPausedState() {
+      wrapper.classList.remove('playing');
+      wrapper.classList.add('paused');
+      updateControlsVisibility();
+    }
+
+    /* NEW: Play in place when clicking the centered play button */
+    playButton.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      pauseAllVideos();
+
+      try {
+        await video.play();
+      } catch (err) {
+        console.error('Video play failed:', err);
+      }
+    });
+
+    /* NEW: Click on the video itself toggles play/pause */
+    video.addEventListener('click', async (e) => {
+      e.stopPropagation();
+
+      if (video.paused) {
+        pauseAllVideos();
+        try {
+          await video.play();
+        } catch (err) {
+          console.error('Video play failed:', err);
+        }
+      } else {
+        video.pause();
+      }
+    });
+
+    /* NEW: Show controls on hover */
+    wrapper.addEventListener('mouseenter', updateControlsVisibility);
+    wrapper.addEventListener('mouseleave', updateControlsVisibility);
+
+    /* NEW: Keep state classes in sync */
+    video.addEventListener('play', setPlayingState);
+    video.addEventListener('pause', setPausedState);
+    video.addEventListener('ended', setPausedState);
+
+    /* NEW: Fullscreen support with explicit enter and exit buttons */
+    fullscreenButton.addEventListener('click', async (e) => {
+      e.stopPropagation();
+
+      try {
+        if (video.requestFullscreen) {
+          await video.requestFullscreen();
+        } else if (wrapper.requestFullscreen) {
+          await wrapper.requestFullscreen();
+        }
+      } catch (err) {
+        console.error('Fullscreen failed:', err);
+      }
+    });
+
+    exitFullscreenButton.addEventListener('click', async (e) => {
+      e.stopPropagation();
+
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+      } catch (err) {
+        console.error('Exit fullscreen failed:', err);
+      }
+    });
+
+    /* NEW: Detect fullscreen changes so the user has a visible way back */
+    document.addEventListener('fullscreenchange', () => {
+      const inFullscreen = document.fullscreenElement === video || document.fullscreenElement === wrapper;
+      exitFullscreenButton.style.display = inFullscreen ? 'flex' : 'none';
+      fullscreenButton.style.display = inFullscreen ? 'none' : 'flex';
+    });
+
+    /* NEW: Generate a thumbnail from the first video frame if poster is not provided.
+       This helps iPhone videos look like image thumbnails in the gallery.
+       Works best when the video file is served from the same site.
+    */
+    if (!video.getAttribute('poster')) {
+      video.addEventListener('loadedmetadata', () => {
+        try {
+          const targetTime = Math.min(0.1, Math.max(0, video.duration / 10));
+          video.currentTime = targetTime;
+        } catch (err) {
+          console.warn('Unable to seek video for thumbnail generation:', err);
+        }
+      });
+
+      video.addEventListener('seeked', function generatePosterOnce() {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth || 640;
+          canvas.height = video.videoHeight || 360;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          video.setAttribute('poster', dataUrl);
+
+          /* Reset to beginning and pause so it behaves like a thumbnail */
+          video.pause();
+          video.currentTime = 0;
+          video.removeAttribute('controls');
+          updateControlsVisibility();
+        } catch (err) {
+          console.warn('Could not generate video thumbnail:', err);
+        }
+
+        video.removeEventListener('seeked', generatePosterOnce);
+      });
+    }
+
+    /* NEW: Initial control state */
+    updateControlsVisibility();
+  });
+
+  /* NEW: If slide changes or page visibility changes, pause videos */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      pauseAllVideos();
+    }
+  });
+</script>
+
+</body>
+</html>
