@@ -14,7 +14,6 @@
     }
 
     :root {
-      /* NEW: Cap gallery media height so the active image/video fits within the viewport */
       --gallery-max-height: calc(100vh - 240px);
     }
 
@@ -53,14 +52,11 @@
       display: none;
     }
 
-    /* CHANGED: Renamed/expanded media container so it can hold either images or videos */
     .media-container {
       position: relative;
       overflow: hidden;
       cursor: pointer;
       background: black;
-
-      /* NEW: Keep gallery media from exceeding the browser viewport height */
       height: min(70vh, var(--gallery-max-height));
       min-height: 260px;
       display: flex;
@@ -68,15 +64,12 @@
       justify-content: center;
     }
 
-    /* CHANGED: Shared sizing for both img and video */
     .media-container img,
     .media-container video {
       width: 100%;
       height: 100%;
       display: block;
       background: black;
-
-      /* NEW: Scale media to fit inside the fixed-height gallery area without cropping */
       object-fit: contain;
       max-height: 100%;
     }
@@ -128,7 +121,6 @@
       background-color: #E6C897;
     }
 
-    /* Modal Overlay */
     .modal {
       position: fixed;
       top: 0;
@@ -205,7 +197,6 @@
       to {opacity: 1}
     }
 
-    /* NEW: Video overlay controls */
     .video-overlay {
       position: absolute;
       inset: 0;
@@ -213,7 +204,6 @@
       z-index: 4;
     }
 
-    /* NEW: Center play button like YouTube-style thumbnail overlay */
     .video-play-button {
       position: absolute;
       left: 50%;
@@ -239,7 +229,6 @@
       transform: translate(-50%, -50%) scale(1.05);
     }
 
-    /* NEW: Bottom controls bar that appears on hover or pause */
     .video-controls-overlay {
       position: absolute;
       left: 0;
@@ -274,27 +263,23 @@
       background: rgba(0, 0, 0, 0.82);
     }
 
-    /* NEW: Show bottom controls on hover or when paused */
     .video-wrapper.show-overlay .video-controls-overlay,
     .video-wrapper:hover .video-controls-overlay {
       opacity: 1;
       pointer-events: auto;
     }
 
-    /* NEW: Hide play button while playing */
     .video-wrapper.playing .video-play-button {
       opacity: 0;
       pointer-events: none;
     }
 
-    /* NEW: When paused or not started, keep the play button visible */
     .video-wrapper.paused .video-play-button,
     .video-wrapper.not-started .video-play-button {
       opacity: 1;
       pointer-events: auto;
     }
 
-    /* NEW: Slight indicator that this is a video */
     .video-badge {
       position: absolute;
       top: 8px;
@@ -309,9 +294,42 @@
       pointer-events: none;
     }
 
+    .dot-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.9rem 0.75rem 0.8rem;
+      background: #111;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: rgba(255,255,255,0.3);
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .dot:hover {
+      transform: scale(1.15);
+      background: rgba(255,255,255,0.55);
+      border-color: rgba(255,255,255,0.8);
+    }
+
+    .dot.active {
+      background: #C4A675;
+      border-color: #E6C897;
+      transform: scale(1.15);
+    }
+
     @media (max-width: 768px) {
       :root {
-        /* NEW: Slightly larger allowance on mobile while still fitting in viewport */
         --gallery-max-height: calc(100vh - 210px);
       }
 
@@ -333,7 +351,6 @@
         display: none;
       }
 
-      /* NEW: Keep video controls visible enough on touch devices */
       .video-controls-overlay {
         opacity: 1;
         pointer-events: auto;
@@ -343,6 +360,16 @@
         width: 64px;
         height: 64px;
         font-size: 24px;
+      }
+
+      .dot-container {
+        gap: 0.4rem;
+        padding: 0.75rem 0.5rem;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
       }
     }
   </style>
@@ -383,14 +410,6 @@
         </div>
       </div>
 
-      <!-- video slide -->
-      <!--
-        Replace the file path with your own .MOV or .MP4 file.
-            <source src="/images/events/example.MOV" type="video/quicktime">
-            <source src="/images/events/example.mp4" type="video/mp4">
-        poster is optional, because the script below will try to generate a thumbnail
-        from the video automatically if no poster is provided.
-      -->
       <div class="mySlides fade">
         <div class="media-container video-wrapper" data-type="video">
           <div class="video-badge">VIDEO</div>
@@ -584,6 +603,7 @@
 
       <a class="prev">&#10094;</a>
       <a class="next">&#10095;</a>
+      <div class="dot-container"></div>
     </div>
     <div class="image-description">
       ULHC Members attended First Annual AliExpress Wreck-A-Watch Luncheon, where individually wrapped watches fueled a lively White Elephant exchange full of steals, swaps, and surprises. At the end, many stepped up to an anvil to deliver the ultimate verdict with a mini sledgehammer.
@@ -630,6 +650,7 @@
 
       <a class="prev">&#10094;</a>
       <a class="next">&#10095;</a>
+      <div class="dot-container"></div>
     </div>
     <div class="image-description">
       ULHC Members attended the HSNY 2026 Gala at The Plaza Hotel in New York City, an elegant evening celebrating horological excellence. The event honored F.P. Journe with a Lifetime Achievement Award, recognizing his extraordinary contributions to independent watchmaking and innovation. Members enjoyed a memorable night among collectors, craftsmen, and industry leaders in one of the city’s most iconic venues.
@@ -739,6 +760,7 @@
 
       <a class="prev">&#10094;</a>
       <a class="next">&#10095;</a>
+      <div class="dot-container"></div>
     </div>
     <div class="image-description">
       Members gathered to hear from our special guest speaker, Roland G. Murphy, founder and master watchmaker of RGM Watches, widely regarded as one of America’s leading independent watchmakers. His work has been recognized internationally for its technical excellence, traditional hand finishing, and steadfast commitment to American manufacturing. Mr. Murphy presented an engaging talk on the history of American watchmaking, exploring its legacy of innovation, precision, and independence from the 19th century to today.
@@ -813,6 +835,7 @@
 
       <a class="prev">&#10094;</a>
       <a class="next">&#10095;</a>
+      <div class="dot-container"></div>
     </div>
     <div class="image-description">
       Members gathered to hear from our special guest speaker, Jack Forster, one of the most respected voices in watch journalism. Jack has spent over two decades immersed in every aspect of watches, clocks, and watchmaking. His career has included leadership roles at Revolution Magazine and HODINKEE, where he served as Editor-in-Chief, and today he is the Global Editorial Director at WatchBox. His work has appeared in American Express Departures, and Vanity Fair, and he is the author of Cartier Time Art: Mechanics of Passion.
@@ -831,6 +854,7 @@
 
       <a class="prev">&#10094;</a>
       <a class="next">&#10095;</a>
+      <div class="dot-container"></div>
     </div>
     <div class="image-description">
       Members of the Union League Horology Club gather for their first unofficial event, generously hosted by RedBar Philadelphia at The 1916 Company (1529 Walnut Street) on Wednesday, June 5th. The private evening featured an elegant spread of light bites and drinks, with guests enjoying hands-on access to an array of exceptional timepieces. The event fostered lively conversation and camaraderie among watch enthusiasts in a welcoming and refined setting.
@@ -842,7 +866,6 @@
   <a href="index.html#features">Back</a>
 </div>
 
-<!-- Modal for enlarged image -->
 <div class="modal" id="imageModal">
   <span class="modal-close" id="modalClose">&times;</span>
   <img id="modalImage" src="" alt="Enlarged view">
@@ -859,35 +882,70 @@
   slideshows.forEach((slideshow, index) => {
     slideIndexes[index] = 1;
     const slides = slideshow.querySelectorAll('.mySlides');
+    const prevButton = slideshow.querySelector('.prev');
+    const nextButton = slideshow.querySelector('.next');
+    const dotContainer = slideshow.querySelector('.dot-container');
+
+    createDots(slideshow, index);
 
     if (slides.length <= 1) {
-      slideshow.querySelector('.prev').style.display = 'none';
-      slideshow.querySelector('.next').style.display = 'none';
+      if (prevButton) prevButton.style.display = 'none';
+      if (nextButton) nextButton.style.display = 'none';
     } else {
-      slideshow.querySelector('.prev').addEventListener('click', (e) => {
+      prevButton.addEventListener('click', (e) => {
         e.stopPropagation();
         pauseAllVideos();
         plusSlides(-1, index);
       });
 
-      slideshow.querySelector('.next').addEventListener('click', (e) => {
+      nextButton.addEventListener('click', (e) => {
         e.stopPropagation();
         pauseAllVideos();
         plusSlides(1, index);
       });
     }
 
+    if (dotContainer && slides.length <= 1) {
+      dotContainer.style.display = 'none';
+    }
+
     showSlides(1, index);
   });
+
+  function createDots(slideshow, slideshowIndex) {
+    const slides = slideshow.querySelectorAll('.mySlides');
+    const dotContainer = slideshow.querySelector('.dot-container');
+
+    if (!dotContainer) return;
+
+    dotContainer.innerHTML = '';
+
+    slides.forEach((_, slideIndex) => {
+      const dot = document.createElement('button');
+      dot.className = 'dot';
+      dot.type = 'button';
+      dot.setAttribute('aria-label', `Go to slide ${slideIndex + 1}`);
+      dot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        pauseAllVideos();
+        currentSlide(slideIndex + 1, slideshowIndex);
+      });
+      dotContainer.appendChild(dot);
+    });
+  }
 
   function plusSlides(n, slideshowIndex) {
     showSlides(slideIndexes[slideshowIndex] += n, slideshowIndex);
   }
 
+  function currentSlide(n, slideshowIndex) {
+    showSlides(slideIndexes[slideshowIndex] = n, slideshowIndex);
+  }
+
   function showSlides(n, slideshowIndex) {
-    let i;
     const currentSlideshow = slideshows[slideshowIndex];
     const slides = currentSlideshow.querySelectorAll('.mySlides');
+    const dots = currentSlideshow.querySelectorAll('.dot');
 
     if (slides.length === 0) return;
 
@@ -898,14 +956,22 @@
       slideIndexes[slideshowIndex] = slides.length;
     }
 
-    for (i = 0; i < slides.length; i++) {
-      slides[i].style.display = 'none';
-    }
+    slides.forEach(slide => {
+      slide.style.display = 'none';
+    });
 
-    slides[slideIndexes[slideshowIndex] - 1].style.display = 'block';
+    dots.forEach(dot => {
+      dot.classList.remove('active');
+    });
+
+    const activeIndex = slideIndexes[slideshowIndex] - 1;
+    slides[activeIndex].style.display = 'block';
+
+    if (dots[activeIndex]) {
+      dots[activeIndex].classList.add('active');
+    }
   }
 
-  /* CHANGED: Image modal logic now only applies to image slides, not videos */
   document.querySelectorAll('.image-container[data-type="image"]').forEach(container => {
     container.addEventListener('click', () => {
       if (window.innerWidth <= 768) return;
@@ -928,14 +994,12 @@
     }
   });
 
-  /* NEW: Pause all videos helper */
   function pauseAllVideos() {
     document.querySelectorAll('.gallery-video').forEach(video => {
       video.pause();
     });
   }
 
-  /* NEW: Video setup */
   document.querySelectorAll('.video-wrapper').forEach(wrapper => {
     const video = wrapper.querySelector('video');
     const playButton = wrapper.querySelector('.video-play-button');
@@ -944,8 +1008,6 @@
 
     wrapper.classList.add('not-started', 'paused');
 
-    /* NEW: Show browser-native controls when hovering or when paused,
-       similar to the feel of YouTube controls appearing when needed */
     function updateControlsVisibility() {
       const shouldShowControls = wrapper.matches(':hover') || video.paused;
       video.controls = shouldShowControls;
@@ -964,7 +1026,6 @@
       updateControlsVisibility();
     }
 
-    /* NEW: Play in place when clicking the centered play button */
     playButton.addEventListener('click', async (e) => {
       e.stopPropagation();
       pauseAllVideos();
@@ -976,7 +1037,6 @@
       }
     });
 
-    /* NEW: Click on the video itself toggles play/pause */
     video.addEventListener('click', async (e) => {
       e.stopPropagation();
 
@@ -992,16 +1052,13 @@
       }
     });
 
-    /* NEW: Show controls on hover */
     wrapper.addEventListener('mouseenter', updateControlsVisibility);
     wrapper.addEventListener('mouseleave', updateControlsVisibility);
 
-    /* NEW: Keep state classes in sync */
     video.addEventListener('play', setPlayingState);
     video.addEventListener('pause', setPausedState);
     video.addEventListener('ended', setPausedState);
 
-    /* NEW: Fullscreen support with explicit enter and exit buttons */
     fullscreenButton.addEventListener('click', async (e) => {
       e.stopPropagation();
 
@@ -1028,17 +1085,12 @@
       }
     });
 
-    /* NEW: Detect fullscreen changes so the user has a visible way back */
     document.addEventListener('fullscreenchange', () => {
       const inFullscreen = document.fullscreenElement === video || document.fullscreenElement === wrapper;
       exitFullscreenButton.style.display = inFullscreen ? 'flex' : 'none';
       fullscreenButton.style.display = inFullscreen ? 'none' : 'flex';
     });
 
-    /* NEW: Generate a thumbnail from the first video frame if poster is not provided.
-       This helps iPhone videos look like image thumbnails in the gallery.
-       Works best when the video file is served from the same site.
-    */
     if (!video.getAttribute('poster')) {
       video.addEventListener('loadedmetadata', () => {
         try {
@@ -1061,7 +1113,6 @@
           const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
           video.setAttribute('poster', dataUrl);
 
-          /* Reset to beginning and pause so it behaves like a thumbnail */
           video.pause();
           video.currentTime = 0;
           video.removeAttribute('controls');
@@ -1074,11 +1125,9 @@
       });
     }
 
-    /* NEW: Initial control state */
     updateControlsVisibility();
   });
 
-  /* NEW: If slide changes or page visibility changes, pause videos */
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       pauseAllVideos();
