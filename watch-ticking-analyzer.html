@@ -4,98 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Watch Ticking Analyzer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        h1 {
-            color: #333;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 10px 0;
-            font-size: 16px;
-        }
-        #output {
-            margin-top: 20px;
-            background: #fff;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-    </style>
 </head>
 <body>
     <h1>Watch Ticking Analyzer</h1>
-    <button id="startBtn">Start Recording</button>
-    <button id="stopBtn" disabled>Stop Recording</button>
-    <div id="output"></div>
-
+    <div>
+        <label for="gain-slider">Adjustable Gain/Sensitivity:</label>
+        <input type="range" id="gain-slider" min="1" max="100" value="1">
+    </div>
+    <div>
+        <label for="threshold">Adjustable Tick Detection Threshold:</label>
+        <input type="number" id="threshold" value="0">
+    </div>
+    <div id="waveform-visualization">
+        <!-- Real-time waveform visualization will be rendered here -->
+    </div>
+    <div id="frequency-spectrum">
+        <!-- Frequency spectrum visualization will be rendered here -->
+    </div>
+    <div>
+        <h2>Advanced Metrics</h2>
+        <p>Peak Amplitude: <span id="peak-amplitude">0</span></p>
+        <p>RMS Energy: <span id="rms-energy">0</span></p>
+        <p>Detected Ticks/sec: <span id="detected-ticks">0</span></p>
+        <p>Peak Frequency: <span id="peak-frequency">0</span></p>
+        <p>Active Frequency Range: <span id="active-frequency-range">0</span></p>
+        <p>Noise Floor: <span id="noise-floor">0</span></p>
+    </div>
     <script>
-        let audioContext;
-        let mediaRecorder;
-        let audioChunks = [];
-        const outputDiv = document.getElementById('output');
-
-        document.getElementById('startBtn').onclick = async () => {
-            outputDiv.innerHTML = '';
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-
-                mediaRecorder.ondataavailable = event => {
-                    audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    audioChunks = [];
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    const audio = new Audio(audioUrl);
-                    const buffer = await audioContext.decodeAudioData(await audioBlob.arrayBuffer());
-                    analyzeAudio(buffer);
-                    audio.play();
-                };
-
-                mediaRecorder.start();
-                document.getElementById('startBtn').disabled = true;
-                document.getElementById('stopBtn').disabled = false;
-            } catch (error) {
-                outputDiv.innerHTML = 'Error accessing microphone: ' + error;
-            }
-        };
-
-        document.getElementById('stopBtn').onclick = () => {
-            mediaRecorder.stop();
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('stopBtn').disabled = true;
-        };
-
-        function analyzeAudio(buffer) {
-            const rawData = buffer.getChannelData(0);
-            const sampleRate = buffer.sampleRate;
-            const amplitude = Math.max(...rawData);
-            const frequencyData = new Uint8Array(512);
-            const analyser = audioContext.createAnalyser();
-            const source = audioContext.createBufferSource();
-            source.buffer = buffer;
-            source.connect(analyser);
-            analyser.fftSize = 1024;
-            analyser.connect(audioContext.destination);
-
-            source.start(0);
-            analyser.getByteFrequencyData(frequencyData);
-
-            const freqArray = Array.from(frequencyData);
-            const avgFreq = freqArray.reduce((sum, value) => sum + value, 0) / freqArray.length;
-            outputDiv.innerHTML += `<p>Amplitude: ${amplitude.toFixed(2)}</p>`;
-            outputDiv.innerHTML += `<p>Average Frequency: ${avgFreq.toFixed(2)} Hz</p>`;
-        }
+        // Real-time audio processing code goes here
+        // Configuration to disable browser audio enhancement features
     </script>
 </body>
 </html>
