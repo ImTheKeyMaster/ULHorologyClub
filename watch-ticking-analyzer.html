@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Ticking Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        #output {
+            margin-top: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Watch Ticking Analyzer</h1>
+    <button id="startBtn">Start Recording</button>
+    <button id="stopBtn" disabled>Stop Recording</button>
+    <div id="output"></div>
+
+    <script>
+        let audioContext;
+        let mediaRecorder;
+        let audioChunks = [];
+        const outputDiv = document.getElementById('output');
+
+        document.getElementById('startBtn').onclick = async () => {
+            outputDiv.innerHTML = '';
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    audioChunks = [];
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    const buffer = await audioContext.decodeAudioData(await audioBlob.arrayBuffer());
+                    analyzeAudio(buffer);
+                    audio.play();
+                };
+
+                mediaRecorder.start();
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+            } catch (error) {
+                outputDiv.innerHTML = 'Error accessing microphone: ' + error;
+            }
+        };
+
+        document.getElementById('stopBtn').onclick = () => {
+            mediaRecorder.stop();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        };
+
+        function analyzeAudio(buffer) {
+            const rawData = buffer.getChannelData(0);
+            const sampleRate = buffer.sampleRate;
+            const amplitude = Math.max(...rawData);
+            const frequencyData = new Uint8Array(512);
+            const analyser = audioContext.createAnalyser();
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(analyser);
+            analyser.fftSize = 1024;
+            analyser.connect(audioContext.destination);
+
+            source.start(0);
+            analyser.getByteFrequencyData(frequencyData);
+
+            const freqArray = Array.from(frequencyData);
+            const avgFreq = freqArray.reduce((sum, value) => sum + value, 0) / freqArray.length;
+            outputDiv.innerHTML += `<p>Amplitude: ${amplitude.toFixed(2)}</p>`;
+            outputDiv.innerHTML += `<p>Average Frequency: ${avgFreq.toFixed(2)} Hz</p>`;
+        }
+    </script>
+</body>
+</html>
