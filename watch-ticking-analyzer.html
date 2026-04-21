@@ -12,7 +12,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: auto;
         }
         h1 {
@@ -58,7 +58,7 @@
         }
         .stats {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 10px;
             margin: 20px 0;
         }
@@ -77,11 +77,36 @@
             color: #00ff00;
             font-weight: bold;
         }
+        .analysis-section {
+            background-color: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 1px solid #00ff00;
+        }
+        .rate-prediction {
+            background-color: #0d3d0d;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border: 2px solid #00ff00;
+        }
+        .rate-value {
+            font-size: 28px;
+            color: #00ff00;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .rate-accuracy {
+            font-size: 14px;
+            color: #aaffaa;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎙️ Watch Ticking Analyzer</h1>
+        <p>Place your watch near the microphone to analyze its ticking performance and predict daily rate accuracy.</p>
         
         <div class="control-section">
             <button id="startRecording">▶ Start Recording</button>
@@ -94,8 +119,8 @@
                 <input type="range" id="gainSlider" min="1" max="100" value="50">
             </div>
             <div style="margin-top: 15px;">
-                <label for="tickThresholdSlider">Tick Detection Threshold: <span id="thresholdValue">0.50</span></label>
-                <input type="range" id="tickThresholdSlider" min="0" max="1" step="0.01" value="0.50">
+                <label for="tickThresholdSlider">Tick Detection Threshold: <span id="thresholdValue">0.10</span></label>
+                <input type="range" id="tickThresholdSlider" min="0.01" max="0.5" step="0.01" value="0.10">
             </div>
         </div>
 
@@ -133,6 +158,47 @@
                 <div class="stat-value" id="noiseFloor">0.000</div>
             </div>
         </div>
+
+        <div class="rate-prediction">
+            <h2>⏱️ Daily Rate Prediction</h2>
+            <div style="margin: 10px 0;">
+                <strong>Measured Frequency:</strong> <span id="measuredFreq">-- Hz</span>
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Reference Frequency (Assumed):</strong> <span id="referenceFreq">-- Hz</span> (4 Hz typical)
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Frequency Deviation:</strong> <span id="freqDeviation">-- Hz</span>
+            </div>
+            <div class="rate-value">
+                <span id="ratePerDay">-- sec/day</span>
+            </div>
+            <div class="rate-accuracy">
+                <strong>Daily Accuracy Range:</strong> <span id="accuracyRange">-- to --</span>
+            </div>
+            <div style="margin: 10px 0; color: #ffff00;">
+                <strong>Interpretation:</strong> <span id="rateInterpretation">Collecting data...</span>
+            </div>
+        </div>
+
+        <div class="analysis-section">
+            <h2>📊 Detailed Analysis</h2>
+            <div style="margin: 10px 0;">
+                <strong>Tick Regularity:</strong> <span id="tickRegularity">--</span>
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Frequency Stability:</strong> <span id="frequencyStability">--</span>
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Signal-to-Noise Ratio:</strong> <span id="snr">-- dB</span>
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Harmonic Content:</strong> <span id="harmonicContent">--</span>
+            </div>
+            <div style="margin: 10px 0;">
+                <strong>Overall Watch Performance:</strong> <span id="overallPerformance">--</span>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -142,6 +208,12 @@
         let gainNode;
         let animationId;
         let isRecording = false;
+        let frequencyHistory = [];
+        let amplitudeHistory = [];
+        let tickCountHistory = [];
+
+        const REFERENCE_FREQUENCY = 4; // Standard for most mechanical watches (4 Hz = 2 beats per second)
+        const SECONDS_PER_DAY = 86400;
 
         const startBtn = document.getElementById('startRecording');
         const stopBtn = document.getElementById('stopRecording');
@@ -162,6 +234,9 @@
 
         startBtn.addEventListener('click', async () => {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            frequencyHistory = [];
+            amplitudeHistory = [];
+            tickCountHistory = [];
             
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -186,7 +261,7 @@
                 isRecording = true;
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
-                statusDisplay.textContent = 'Status: 🔴 Recording...';
+                statusDisplay.textContent = 'Status: 🔴 Recording... (collecting data for predictions)';
 
                 visualize();
             } catch (error) {
@@ -200,7 +275,7 @@
             microphone.mediaStream.getTracks().forEach(track => track.stop());
             startBtn.disabled = false;
             stopBtn.disabled = true;
-            statusDisplay.textContent = 'Status: ⏹ Stopped';
+            statusDisplay.textContent = 'Status: ⏹ Stopped (analysis complete)';
         });
 
         function visualize() {
@@ -213,6 +288,7 @@
             drawWaveform(waveformData);
             drawSpectrum(frequencyData);
             updateStats(waveformData, frequencyData);
+            analyzePerformance(waveformData, frequencyData);
 
             if (isRecording) {
                 animationId = requestAnimationFrame(visualize);
@@ -227,6 +303,15 @@
 
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw center line
+            ctx.strokeStyle = '#444';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height / 2);
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
 
             ctx.strokeStyle = '#00ff00';
             ctx.lineWidth = 1;
@@ -271,6 +356,7 @@
             const sampleRate = audioContext.sampleRate;
             const threshold = parseFloat(thresholdSlider.value);
 
+            // Peak amplitude
             let maxAmplitude = 0;
             let sumSquares = 0;
             for (let i = 0; i < waveformData.length; i++) {
@@ -280,11 +366,19 @@
             }
 
             document.getElementById('peakAmplitude').textContent = maxAmplitude.toFixed(3);
-            document.getElementById('rmsEnergy').textContent = (Math.sqrt(sumSquares / waveformData.length)).toFixed(3);
 
+            // RMS Energy
+            const rmsEnergy = Math.sqrt(sumSquares / waveformData.length);
+            document.getElementById('rmsEnergy').textContent = rmsEnergy.toFixed(3);
+
+            // Peak frequency
             const maxFreqIndex = frequencyData.indexOf(Math.max(...frequencyData));
-            document.getElementById('peakFrequency').textContent = ((maxFreqIndex * sampleRate) / analyser.fftSize).toFixed(1) + ' Hz';
+            const peakFreq = (maxFreqIndex * sampleRate) / analyser.fftSize;
+            document.getElementById('peakFrequency').textContent = peakFreq.toFixed(2) + ' Hz';
+            frequencyHistory.push(peakFreq);
+            if (frequencyHistory.length > 100) frequencyHistory.shift();
 
+            // Frequency range
             const noiseLevel = Math.min(...frequencyData) + (Math.max(...frequencyData) - Math.min(...frequencyData)) * 0.2;
             let minFreqIdx = 0, maxFreqIdx = 0;
             for (let i = 0; i < frequencyData.length; i++) {
@@ -293,9 +387,15 @@
                     maxFreqIdx = i;
                 }
             }
-            document.getElementById('activeFrequencyRange').textContent = ((minFreqIdx * sampleRate) / analyser.fftSize).toFixed(0) + '-' + ((maxFreqIdx * sampleRate) / analyser.fftSize).toFixed(0) + ' Hz';
-            document.getElementById('noiseFloor').textContent = (Math.min(...frequencyData) / 255).toFixed(3);
+            const minFreqHz = (minFreqIdx * sampleRate) / analyser.fftSize;
+            const maxFreqHz = (maxFreqIdx * sampleRate) / analyser.fftSize;
+            document.getElementById('activeFrequencyRange').textContent = minFreqHz.toFixed(0) + '-' + maxFreqHz.toFixed(0) + ' Hz';
 
+            // Noise floor
+            const noiseFloor = Math.min(...frequencyData) / 255;
+            document.getElementById('noiseFloor').textContent = noiseFloor.toFixed(3);
+
+            // Detect ticks
             let tickCount = 0;
             for (let i = 1; i < waveformData.length - 1; i++) {
                 const curr = (waveformData[i] - 128) / 128;
@@ -305,7 +405,106 @@
                     tickCount++;
                 }
             }
-            document.getElementById('ticksPerSec').textContent = Math.max(0, Math.round((tickCount * sampleRate) / analyser.fftSize));
+            const ticksPerSecond = (tickCount * sampleRate) / analyser.fftSize;
+            document.getElementById('ticksPerSec').textContent = Math.max(0, Math.round(ticksPerSecond));
+            tickCountHistory.push(ticksPerSecond);
+            if (tickCountHistory.length > 100) tickCountHistory.shift();
+        }
+
+        function analyzePerformance(waveformData, frequencyData) {
+            const sampleRate = audioContext.sampleRate;
+
+            // Calculate Signal-to-Noise Ratio
+            const signal = Math.max(...frequencyData);
+            const noise = Math.min(...frequencyData);
+            const snr = 20 * Math.log10(signal / (noise + 0.0001));
+            document.getElementById('snr').textContent = snr.toFixed(1) + ' dB';
+
+            // Frequency Stability
+            if (frequencyHistory.length > 10) {
+                const avgFreq = frequencyHistory.reduce((a, b) => a + b) / frequencyHistory.length;
+                const variance = frequencyHistory.reduce((sum, f) => sum + Math.pow(f - avgFreq, 2), 0) / frequencyHistory.length;
+                const stdDev = Math.sqrt(variance);
+                const stability = ((1 - (stdDev / avgFreq)) * 100).toFixed(1);
+                document.getElementById('frequencyStability').textContent = stability + '%';
+            }
+
+            // Amplitude Regularity
+            if (amplitudeHistory.length > 10) {
+                const avgAmp = amplitudeHistory.reduce((a, b) => a + b) / amplitudeHistory.length;
+                const ampVariance = amplitudeHistory.reduce((sum, a) => sum + Math.pow(a - avgAmp, 2), 0) / amplitudeHistory.length;
+                const ampStdDev = Math.sqrt(ampVariance);
+                const regularity = ((1 - (ampStdDev / avgAmp)) * 100).toFixed(1);
+                document.getElementById('tickRegularity').textContent = regularity + '%';
+                amplitudeHistory.push(Math.max(...waveformData));
+                if (amplitudeHistory.length > 100) amplitudeHistory.shift();
+            }
+
+            // Harmonic Content
+            const fundamental = frequencyData.slice(0, 30).reduce((a, b) => a + b) / 30;
+            const harmonics = frequencyData.slice(30, 100).reduce((a, b) => a + b) / 70;
+            const harmonicRatio = (fundamental / (harmonics + 0.0001)).toFixed(2);
+            document.getElementById('harmonicContent').textContent = harmonicRatio + ' (clean signal)';
+
+            // ========== DAILY RATE PREDICTION ==========
+            if (frequencyHistory.length >= 20) {
+                const avgMeasuredFreq = frequencyHistory.reduce((a, b) => a + b) / frequencyHistory.length;
+                const freqDeviation = avgMeasuredFreq - REFERENCE_FREQUENCY;
+                
+                // Calculate seconds per day prediction
+                // If frequency is higher, watch runs fast (gains time, positive)
+                // If frequency is lower, watch runs slow (loses time, negative)
+                const ratePerDay = (freqDeviation / REFERENCE_FREQUENCY) * SECONDS_PER_DAY;
+                
+                document.getElementById('measuredFreq').textContent = avgMeasuredFreq.toFixed(2) + ' Hz';
+                document.getElementById('referenceFreq').textContent = REFERENCE_FREQUENCY.toFixed(2) + ' Hz';
+                document.getElementById('freqDeviation').textContent = (freqDeviation > 0 ? '+' : '') + freqDeviation.toFixed(3) + ' Hz';
+                
+                // Display rate with +/- sign
+                const rateSign = ratePerDay > 0 ? '+' : '';
+                document.getElementById('ratePerDay').textContent = rateSign + ratePerDay.toFixed(2) + ' sec/day';
+                
+                // Calculate accuracy range based on stability
+                const stability = frequencyHistory.length > 10 ? 
+                    (1 - (Math.sqrt(frequencyHistory.reduce((sum, f) => sum + Math.pow(f - avgMeasuredFreq, 2), 0) / frequencyHistory.length) / avgMeasuredFreq)) * 100 
+                    : 0;
+                
+                const tolerance = Math.abs(ratePerDay) * (100 - stability) / 100;
+                const minRate = ratePerDay - tolerance;
+                const maxRate = ratePerDay + tolerance;
+                
+                document.getElementById('accuracyRange').textContent = 
+                    (minRate > 0 ? '+' : '') + minRate.toFixed(2) + ' to ' + 
+                    (maxRate > 0 ? '+' : '') + maxRate.toFixed(2) + ' sec/day';
+                
+                // Interpretation
+                let interpretation = '';
+                if (Math.abs(ratePerDay) < 5) {
+                    interpretation = '✓ Excellent timekeeping - within COSC standards (±4-6 sec/day)';
+                } else if (Math.abs(ratePerDay) < 15) {
+                    interpretation = '✓ Good timekeeping - acceptable for daily use';
+                } else if (Math.abs(ratePerDay) < 30) {
+                    interpretation = '⚠ Moderate rate - may need adjustment';
+                } else {
+                    interpretation = '⚠ Poor timekeeping - adjustment or service recommended';
+                }
+                document.getElementById('rateInterpretation').textContent = interpretation;
+            }
+
+            // Overall Performance Rating
+            const snrScore = Math.min(snr / 30 * 100, 100);
+            const stabilityScore = frequencyHistory.length > 10 ? parseFloat(document.getElementById('frequencyStability').textContent) : 0;
+            const regularityScore = amplitudeHistory.length > 10 ? parseFloat(document.getElementById('tickRegularity').textContent) : 0;
+            const overallScore = (snrScore + stabilityScore + regularityScore) / 3;
+
+            let rating = '';
+            if (overallScore >= 85) rating = '⭐⭐⭐⭐⭐ Excellent';
+            else if (overallScore >= 70) rating = '⭐⭐⭐⭐ Very Good';
+            else if (overallScore >= 55) rating = '⭐⭐⭐ Good';
+            else if (overallScore >= 40) rating = '⭐⭐ Fair';
+            else rating = '⭐ Poor';
+
+            document.getElementById('overallPerformance').textContent = rating + ' (' + overallScore.toFixed(1) + '/100)';
         }
     </script>
 </body>
