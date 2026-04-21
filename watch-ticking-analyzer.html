@@ -3,67 +3,309 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Watch Ticking Analyzer</title>
+    <title>Watch Ticking Analyzer</title>
     <style>
         body {
             background-color: #121212;
-            color: #e0e0e0;
+            color: #ffffff;
             font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
         }
         h1 {
             color: #00ff00;
         }
-        canvas {
+        button {
+            background-color: #6200ea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #3700b3;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .control-section {
+            background-color: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        label {
             display: block;
-            margin: auto;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        canvas {
+            border: 1px solid #00ff00;
+            width: 100%;
+            height: 200px;
+            background-color: #000;
+            margin: 15px 0;
+            display: block;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .stat {
+            background-color: #1e1e1e;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #00ff00;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #aaa;
+        }
+        .stat-value {
+            font-size: 18px;
+            color: #00ff00;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1>Enhanced Watch Ticking Analyzer</h1>
-    <canvas id="visualizationCanvas"></canvas>
+    <div class="container">
+        <h1>🎙️ Watch Ticking Analyzer</h1>
+        
+        <div class="control-section">
+            <button id="startRecording">▶ Start Recording</button>
+            <button id="stopRecording" disabled>⏹ Stop Recording</button>
+        </div>
+
+        <div class="control-section">
+            <div>
+                <label for="gainSlider">Gain (Sensitivity): <span id="gainValue">50</span>x</label>
+                <input type="range" id="gainSlider" min="1" max="100" value="50">
+            </div>
+            <div style="margin-top: 15px;">
+                <label for="tickThresholdSlider">Tick Detection Threshold: <span id="thresholdValue">0.50</span></label>
+                <input type="range" id="tickThresholdSlider" min="0" max="1" step="0.01" value="0.50">
+            </div>
+        </div>
+
+        <div id="statusDisplay" style="background-color: #1e1e1e; padding: 10px; border-radius: 5px; margin: 10px 0;">Status: Ready</div>
+
+        <div><strong>Waveform (Real-time)</strong></div>
+        <canvas id="waveformCanvas"></canvas>
+
+        <div><strong>Frequency Spectrum</strong></div>
+        <canvas id="spectrumCanvas"></canvas>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Peak Amplitude</div>
+                <div class="stat-value" id="peakAmplitude">0.000</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">RMS Energy</div>
+                <div class="stat-value" id="rmsEnergy">0.000</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Detected Ticks/sec</div>
+                <div class="stat-value" id="ticksPerSec">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Peak Frequency</div>
+                <div class="stat-value" id="peakFrequency">0 Hz</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Active Frequency Range</div>
+                <div class="stat-value" id="activeFrequencyRange">0-0 Hz</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Noise Floor</div>
+                <div class="stat-value" id="noiseFloor">0.000</div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Disable audio enhancements
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)({
-            latencyHint: 'balanced',
+        let audioContext;
+        let analyser;
+        let microphone;
+        let gainNode;
+        let animationId;
+        let isRecording = false;
+
+        const startBtn = document.getElementById('startRecording');
+        const stopBtn = document.getElementById('stopRecording');
+        const gainSlider = document.getElementById('gainSlider');
+        const gainValue = document.getElementById('gainValue');
+        const thresholdSlider = document.getElementById('tickThresholdSlider');
+        const thresholdValue = document.getElementById('thresholdValue');
+        const statusDisplay = document.getElementById('statusDisplay');
+
+        gainSlider.addEventListener('input', () => {
+            gainValue.textContent = gainSlider.value;
+            if (gainNode) gainNode.gain.value = gainSlider.value;
         });
 
-        // Setup audio capture and analysis
-        navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
-            .then(stream => {
-                const source = audioContext.createMediaStreamSource(stream);
-                const analyser = audioContext.createAnalyser();
-                analyser.fftSize = 8192; // High resolution FFT
-                source.connect(analyser);
-                visualize(analyser);
-            })
-            .catch(err => console.error('Audio capture error:', err));
+        thresholdSlider.addEventListener('input', () => {
+            thresholdValue.textContent = parseFloat(thresholdSlider.value).toFixed(2);
+        });
 
-        function visualize(analyser) {
-            const canvas = document.getElementById('visualizationCanvas');
+        startBtn.addEventListener('click', async () => {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    }
+                });
+
+                microphone = audioContext.createMediaStreamSource(stream);
+                gainNode = audioContext.createGain();
+                gainNode.gain.value = gainSlider.value;
+                
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 8192;
+                analyser.smoothingTimeConstant = 0.1;
+
+                microphone.connect(gainNode);
+                gainNode.connect(analyser);
+
+                isRecording = true;
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                statusDisplay.textContent = 'Status: 🔴 Recording...';
+
+                visualize();
+            } catch (error) {
+                statusDisplay.textContent = 'Status: ❌ Error - ' + error.message;
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            isRecording = false;
+            cancelAnimationFrame(animationId);
+            microphone.mediaStream.getTracks().forEach(track => track.stop());
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusDisplay.textContent = 'Status: ⏹ Stopped';
+        });
+
+        function visualize() {
+            const waveformData = new Uint8Array(analyser.fftSize);
+            const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
+            analyser.getByteTimeDomainData(waveformData);
+            analyser.getByteFrequencyData(frequencyData);
+
+            drawWaveform(waveformData);
+            drawSpectrum(frequencyData);
+            updateStats(waveformData, frequencyData);
+
+            if (isRecording) {
+                animationId = requestAnimationFrame(visualize);
+            }
+        }
+
+        function drawWaveform(data) {
+            const canvas = document.getElementById('waveformCanvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = 300;
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 200;
 
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            function draw() {
-                requestAnimationFrame(draw);
-                analyser.getByteFrequencyData(dataArray);
-                ctx.fillStyle = 'rgba(18, 18, 18, 0.5)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                const barWidth = (canvas.width / bufferLength) * 2.5;
-                let barHeight;
-                let x = 0;
-                for (let i = 0; i < bufferLength; i++) {
-                    barHeight = dataArray[i];
-                    ctx.fillStyle = '#00ff00';
-                    ctx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
-                    x += barWidth + 1;
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            const sliceWidth = canvas.width / data.length;
+            let x = 0;
+
+            for (let i = 0; i < data.length; i++) {
+                const v = (data[i] - 128) / 128;
+                const y = (v * canvas.height / 2) + (canvas.height / 2);
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                x += sliceWidth;
+            }
+            ctx.stroke();
+        }
+
+        function drawSpectrum(data) {
+            const canvas = document.getElementById('spectrumCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 200;
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00ff00';
+            const barWidth = canvas.width / data.length;
+
+            for (let i = 0; i < data.length; i++) {
+                const barHeight = (data[i] / 255) * canvas.height;
+                ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth, barHeight);
+            }
+        }
+
+        function updateStats(waveformData, frequencyData) {
+            const sampleRate = audioContext.sampleRate;
+            const threshold = parseFloat(thresholdSlider.value);
+
+            let maxAmplitude = 0;
+            let sumSquares = 0;
+            for (let i = 0; i < waveformData.length; i++) {
+                const normalized = (waveformData[i] - 128) / 128;
+                maxAmplitude = Math.max(maxAmplitude, Math.abs(normalized));
+                sumSquares += normalized * normalized;
+            }
+
+            document.getElementById('peakAmplitude').textContent = maxAmplitude.toFixed(3);
+            document.getElementById('rmsEnergy').textContent = (Math.sqrt(sumSquares / waveformData.length)).toFixed(3);
+
+            const maxFreqIndex = frequencyData.indexOf(Math.max(...frequencyData));
+            document.getElementById('peakFrequency').textContent = ((maxFreqIndex * sampleRate) / analyser.fftSize).toFixed(1) + ' Hz';
+
+            const noiseLevel = Math.min(...frequencyData) + (Math.max(...frequencyData) - Math.min(...frequencyData)) * 0.2;
+            let minFreqIdx = 0, maxFreqIdx = 0;
+            for (let i = 0; i < frequencyData.length; i++) {
+                if (frequencyData[i] > noiseLevel) {
+                    if (minFreqIdx === 0) minFreqIdx = i;
+                    maxFreqIdx = i;
                 }
             }
-            draw();
+            document.getElementById('activeFrequencyRange').textContent = ((minFreqIdx * sampleRate) / analyser.fftSize).toFixed(0) + '-' + ((maxFreqIdx * sampleRate) / analyser.fftSize).toFixed(0) + ' Hz';
+            document.getElementById('noiseFloor').textContent = (Math.min(...frequencyData) / 255).toFixed(3);
+
+            let tickCount = 0;
+            for (let i = 1; i < waveformData.length - 1; i++) {
+                const curr = (waveformData[i] - 128) / 128;
+                const prev = (waveformData[i-1] - 128) / 128;
+                const next = (waveformData[i+1] - 128) / 128;
+                if (curr > threshold && curr > prev && curr > next) {
+                    tickCount++;
+                }
+            }
+            document.getElementById('ticksPerSec').textContent = Math.max(0, Math.round((tickCount * sampleRate) / analyser.fftSize));
         }
     </script>
 </body>
