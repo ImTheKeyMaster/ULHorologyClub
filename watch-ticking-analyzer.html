@@ -3,36 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watch Ticking Analyzer</title>
+    <title>Enhanced Watch Ticking Analyzer</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            color: #00ff00;
+        }
+        canvas {
+            display: block;
+            margin: auto;
+        }
+    </style>
 </head>
 <body>
-    <h1>Watch Ticking Analyzer</h1>
-    <div>
-        <label for="gain-slider">Adjustable Gain/Sensitivity:</label>
-        <input type="range" id="gain-slider" min="1" max="100" value="1">
-    </div>
-    <div>
-        <label for="threshold">Adjustable Tick Detection Threshold:</label>
-        <input type="number" id="threshold" value="0">
-    </div>
-    <div id="waveform-visualization">
-        <!-- Real-time waveform visualization will be rendered here -->
-    </div>
-    <div id="frequency-spectrum">
-        <!-- Frequency spectrum visualization will be rendered here -->
-    </div>
-    <div>
-        <h2>Advanced Metrics</h2>
-        <p>Peak Amplitude: <span id="peak-amplitude">0</span></p>
-        <p>RMS Energy: <span id="rms-energy">0</span></p>
-        <p>Detected Ticks/sec: <span id="detected-ticks">0</span></p>
-        <p>Peak Frequency: <span id="peak-frequency">0</span></p>
-        <p>Active Frequency Range: <span id="active-frequency-range">0</span></p>
-        <p>Noise Floor: <span id="noise-floor">0</span></p>
-    </div>
+    <h1>Enhanced Watch Ticking Analyzer</h1>
+    <canvas id="visualizationCanvas"></canvas>
     <script>
-        // Real-time audio processing code goes here
-        // Configuration to disable browser audio enhancement features
+        // Disable audio enhancements
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+            latencyHint: 'balanced',
+        });
+
+        // Setup audio capture and analysis
+        navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+            .then(stream => {
+                const source = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 8192; // High resolution FFT
+                source.connect(analyser);
+                visualize(analyser);
+            })
+            .catch(err => console.error('Audio capture error:', err));
+
+        function visualize(analyser) {
+            const canvas = document.getElementById('visualizationCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = 300;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+                ctx.fillStyle = 'rgba(18, 18, 18, 0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let barHeight;
+                let x = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = dataArray[i];
+                    ctx.fillStyle = '#00ff00';
+                    ctx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
+                    x += barWidth + 1;
+                }
+            }
+            draw();
+        }
     </script>
 </body>
 </html>
