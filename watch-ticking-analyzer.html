@@ -49,6 +49,15 @@
             width: 100px;
             padding: 5px;
         }
+        select {
+            background-color: #2a2a2a;
+            color: #ffffff;
+            border: 1px solid #444;
+            padding: 5px 8px;
+            font-size: 14px;
+            border-radius: 3px;
+            margin-left: 8px;
+        }
         canvas {
             border: 1px solid #00ff00;
             width: 100%;
@@ -134,6 +143,15 @@
             font-size: 12px;
             color: #aaa;
         }
+        .fix-note {
+            background-color: #1a1a00;
+            border-left: 3px solid #ffff00;
+            color: #ffff00;
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 3px;
+            margin: 8px 0;
+        }
     </style>
 </head>
 <body>
@@ -144,6 +162,19 @@
         <div class="control-section">
             <label for="samplingTime">Sampling Duration (seconds):</label>
             <input type="number" id="samplingTime" min="10" max="120" value="30">
+
+            <label for="beatRate" style="margin-top:12px;">Watch Beat Rate (beats per hour):</label>
+            <select id="beatRate">
+                <option value="18000">18,000 bph — 2.5 Hz (pocket watches)</option>
+                <option value="21600">21,600 bph — 3 Hz (vintage)</option>
+                <option value="28800" selected>28,800 bph — 4 Hz (modern standard)</option>
+                <option value="36000">36,000 bph — 5 Hz (high-beat)</option>
+                <option value="43200">43,200 bph — 6 Hz (high-beat)</option>
+            </select>
+            <div class="fix-note">
+                ℹ️ Select your watch's beat rate so the daily rate deviation is calculated against the correct reference frequency.
+            </div>
+
             <button id="startRecording">▶ Start Recording</button>
         </div>
 
@@ -197,11 +228,24 @@
 
         <div class="rate-prediction">
             <h2>⏱️ Daily Rate Prediction</h2>
+
+            <!--
+                FIX: Previously, "measuredFreq" was the peak FFT bin frequency — whatever
+                frequency dominated the audio spectrum (e.g. mains hum, room noise).
+                Watch ticks are broadband transient clicks, NOT sinusoidal tones, so the
+                FFT peak has no relationship to tick rate.
+
+                The correct measured frequency is the tick detection rate from
+                tickCountHistory (beats/second), which is what we now display and use
+                for all deviation and rate-per-day calculations below.
+            -->
+
             <div style="margin: 10px 0;">
-                <strong>Measured Frequency:</strong> <span id="measuredFreq">-- Hz</span>
+                <strong>Measured Tick Rate:</strong> <span id="measuredFreq">-- Hz</span>
+                <span style="color:#888; font-size:12px; margin-left:8px;">(from transient peak detection)</span>
             </div>
             <div style="margin: 10px 0;">
-                <strong>Reference Frequency (Assumed):</strong> <span id="referenceFreq">-- Hz</span> (4 Hz typical)
+                <strong>Reference Frequency (Selected):</strong> <span id="referenceFreq">-- Hz</span>
             </div>
             <div style="margin: 10px 0;">
                 <strong>Frequency Deviation:</strong> <span id="freqDeviation">-- Hz</span>
@@ -223,7 +267,7 @@
                 <strong>Tick Regularity:</strong> <span id="tickRegularity">--</span>
             </div>
             <div style="margin: 10px 0;">
-                <strong>Frequency Stability:</strong> <span id="frequencyStability">--</span>
+                <strong>Tick Rate Stability:</strong> <span id="frequencyStability">--</span>
             </div>
             <div style="margin: 10px 0;">
                 <strong>Signal-to-Noise Ratio:</strong> <span id="snr">-- dB</span>
@@ -244,7 +288,7 @@
         let gainNode;
         let animationId;
         let isRecording = false;
-        let frequencyHistory = [];
+        let tickRateHistory = [];   // FIX: replaces frequencyHistory (FFT peak) with actual tick rate history
         let amplitudeHistory = [];
         let tickCountHistory = [];
         let recordingStartTime;
@@ -253,15 +297,21 @@
 
         let currentGain = 50;
         let currentThreshold = 0.10;
-        const REFERENCE_FREQUENCY = 4;
         const SECONDS_PER_DAY = 86400;
 
         const startBtn = document.getElementById('startRecording');
         const samplingTimeInput = document.getElementById('samplingTime');
+        const beatRateSelect = document.getElementById('beatRate');
         const statusDisplay = document.getElementById('statusDisplay');
         const countdownDisplay = document.getElementById('countdownDisplay');
         const countdownTimer = document.getElementById('countdownTimer');
         const autoAdjustInfo = document.getElementById('autoAdjustInfo');
+
+        // Derive reference frequency in Hz from the selected bph value
+        function getReferenceFrequency() {
+            const bph = parseInt(beatRateSelect.value);
+            return bph / 3600; // beats per hour → beats per second (Hz)
+        }
 
         samplingTimeInput.addEventListener('change', () => {
             samplingDuration = parseInt(samplingTimeInput.value) || 30;
@@ -269,7 +319,7 @@
 
         startBtn.addEventListener('click', async () => {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            frequencyHistory = [];
+            tickRateHistory = [];
             amplitudeHistory = [];
             tickCountHistory = [];
             currentGain = 20;
@@ -298,6 +348,7 @@
                 isRecording = true;
                 startBtn.disabled = true;
                 samplingTimeInput.disabled = true;
+                beatRateSelect.disabled = true;
                 recordingStartTime = Date.now();
                 
                 statusDisplay.textContent = 'Status: 🔴 Recording...';
@@ -332,6 +383,7 @@
             microphone.mediaStream.getTracks().forEach(track => track.stop());
             startBtn.disabled = false;
             samplingTimeInput.disabled = false;
+            beatRateSelect.disabled = false;
             statusDisplay.textContent = 'Status: ✓ Recording complete - Analysis ready';
             countdownDisplay.style.display = 'none';
             autoAdjustInfo.style.display = 'none';
@@ -366,7 +418,6 @@
             const noise = Math.min(...frequencyData);
             const snr = signal / (noise + 0.0001);
 
-            // Auto-adjust gain based on peak amplitude
             if (maxAmplitude < 0.2) {
                 currentGain = Math.min(100, currentGain + 2);
             } else if (maxAmplitude > 0.8) {
@@ -375,10 +426,8 @@
 
             gainNode.gain.value = currentGain;
 
-            // Auto-adjust threshold based on tick detection
             if (tickCountHistory.length > 0) {
                 const recentTickCount = tickCountHistory.slice(-5).reduce((a, b) => a + b) / 5;
-                
                 if (recentTickCount < 3) {
                     currentThreshold = Math.max(0.01, currentThreshold - 0.01);
                 } else if (recentTickCount > 20) {
@@ -386,7 +435,6 @@
                 }
             }
 
-            // Determine signal quality
             let signalQuality = 'Poor';
             if (snr > 5) signalQuality = 'Good';
             if (snr > 10) signalQuality = 'Excellent';
@@ -468,11 +516,11 @@
             document.getElementById('peakAmplitude').textContent = maxAmplitude.toFixed(3);
             document.getElementById('rmsEnergy').textContent = Math.sqrt(sumSquares / waveformData.length).toFixed(3);
 
+            // FFT peak is still shown as an informational stat for the spectrum display
             const maxFreqIndex = frequencyData.indexOf(Math.max(...frequencyData));
             const peakFreq = (maxFreqIndex * sampleRate) / analyser.fftSize;
             document.getElementById('peakFrequency').textContent = peakFreq.toFixed(2) + ' Hz';
-            frequencyHistory.push(peakFreq);
-            if (frequencyHistory.length > 100) frequencyHistory.shift();
+            // NOTE: peakFreq is NOT stored into tickRateHistory — it's unrelated to tick rate.
 
             const noiseLevel = Math.min(...frequencyData) + (Math.max(...frequencyData) - Math.min(...frequencyData)) * 0.2;
             let minFreqIdx = 0, maxFreqIdx = 0;
@@ -487,6 +535,7 @@
             document.getElementById('activeFrequencyRange').textContent = minFreqHz.toFixed(0) + '-' + maxFreqHz.toFixed(0) + ' Hz';
             document.getElementById('noiseFloor').textContent = (Math.min(...frequencyData) / 255).toFixed(3);
 
+            // --- Tick detection via transient (time-domain) peak counting ---
             let tickCount = 0;
             for (let i = 1; i < waveformData.length - 1; i++) {
                 const curr = (waveformData[i] - 128) / 128;
@@ -496,10 +545,18 @@
                     tickCount++;
                 }
             }
+
+            // FIX: ticksPerSecond is the measured beat rate in Hz.
+            // This is what must be compared to the watch's reference frequency.
             const ticksPerSecond = (tickCount * sampleRate) / analyser.fftSize;
             document.getElementById('ticksPerSec').textContent = Math.max(0, Math.round(ticksPerSecond));
+
             tickCountHistory.push(ticksPerSecond);
             if (tickCountHistory.length > 100) tickCountHistory.shift();
+
+            // FIX: Store tick rate (not FFT peak freq) into the history used for rate prediction
+            tickRateHistory.push(ticksPerSecond);
+            if (tickRateHistory.length > 100) tickRateHistory.shift();
 
             amplitudeHistory.push(maxAmplitude);
             if (amplitudeHistory.length > 100) amplitudeHistory.shift();
@@ -513,11 +570,14 @@
             const snr = 20 * Math.log10(signal / (noise + 0.0001));
             document.getElementById('snr').textContent = snr.toFixed(1) + ' dB';
 
-            if (frequencyHistory.length > 10) {
-                const avgFreq = frequencyHistory.reduce((a, b) => a + b) / frequencyHistory.length;
-                const variance = frequencyHistory.reduce((sum, f) => sum + Math.pow(f - avgFreq, 2), 0) / frequencyHistory.length;
+            // FIX: Stability now measures consistency of the tick rate, not FFT peak
+            if (tickRateHistory.length > 10) {
+                const avgTickRate = tickRateHistory.reduce((a, b) => a + b) / tickRateHistory.length;
+                const variance = tickRateHistory.reduce((sum, f) => sum + Math.pow(f - avgTickRate, 2), 0) / tickRateHistory.length;
                 const stdDev = Math.sqrt(variance);
-                const stability = ((1 - (stdDev / avgFreq)) * 100).toFixed(1);
+                const stability = avgTickRate > 0
+                    ? ((1 - (stdDev / avgTickRate)) * 100).toFixed(1)
+                    : '0.0';
                 document.getElementById('frequencyStability').textContent = stability + '%';
             }
 
@@ -534,30 +594,40 @@
             const harmonicRatio = (fundamental / (harmonics + 0.0001)).toFixed(2);
             document.getElementById('harmonicContent').textContent = harmonicRatio + ' (clean signal)';
 
-            if (frequencyHistory.length >= 20) {
-                const avgMeasuredFreq = frequencyHistory.reduce((a, b) => a + b) / frequencyHistory.length;
-                const freqDeviation = avgMeasuredFreq - REFERENCE_FREQUENCY;
+            // FIX: Daily rate prediction now uses avgMeasuredTickRate (beats/sec from transient
+            // detection) vs. the user-selected reference frequency for this watch's beat rate.
+            // Previously it used FFT peak frequency, which is unrelated to tick rate.
+            if (tickRateHistory.length >= 20) {
+                const REFERENCE_FREQUENCY = getReferenceFrequency();
+
+                const avgMeasuredTickRate = tickRateHistory.reduce((a, b) => a + b) / tickRateHistory.length;
+                const freqDeviation = avgMeasuredTickRate - REFERENCE_FREQUENCY;
+
+                // Rate error in seconds/day:
+                // If the watch ticks faster than nominal, it gains time; slower → loses time.
                 const ratePerDay = (freqDeviation / REFERENCE_FREQUENCY) * SECONDS_PER_DAY;
-                
-                document.getElementById('measuredFreq').textContent = avgMeasuredFreq.toFixed(2) + ' Hz';
-                document.getElementById('referenceFreq').textContent = REFERENCE_FREQUENCY.toFixed(2) + ' Hz';
-                document.getElementById('freqDeviation').textContent = (freqDeviation > 0 ? '+' : '') + freqDeviation.toFixed(3) + ' Hz';
-                
+
+                document.getElementById('measuredFreq').textContent = avgMeasuredTickRate.toFixed(4) + ' Hz';
+                document.getElementById('referenceFreq').textContent = REFERENCE_FREQUENCY.toFixed(4) + ' Hz';
+                document.getElementById('freqDeviation').textContent = (freqDeviation >= 0 ? '+' : '') + freqDeviation.toFixed(4) + ' Hz';
+
                 const rateSign = ratePerDay > 0 ? '+' : '';
                 document.getElementById('ratePerDay').textContent = rateSign + ratePerDay.toFixed(2) + ' sec/day';
-                
-                const stability = frequencyHistory.length > 10 ? 
-                    (1 - (Math.sqrt(frequencyHistory.reduce((sum, f) => sum + Math.pow(f - avgMeasuredFreq, 2), 0) / frequencyHistory.length) / avgMeasuredFreq)) * 100 
+
+                const stdDev = Math.sqrt(
+                    tickRateHistory.reduce((sum, f) => sum + Math.pow(f - avgMeasuredTickRate, 2), 0) / tickRateHistory.length
+                );
+                const stability = avgMeasuredTickRate > 0
+                    ? (1 - (stdDev / avgMeasuredTickRate)) * 100
                     : 0;
-                
                 const tolerance = Math.abs(ratePerDay) * (100 - stability) / 100;
                 const minRate = ratePerDay - tolerance;
                 const maxRate = ratePerDay + tolerance;
-                
-                document.getElementById('accuracyRange').textContent = 
-                    (minRate > 0 ? '+' : '') + minRate.toFixed(2) + ' to ' + 
+
+                document.getElementById('accuracyRange').textContent =
+                    (minRate > 0 ? '+' : '') + minRate.toFixed(2) + ' to ' +
                     (maxRate > 0 ? '+' : '') + maxRate.toFixed(2) + ' sec/day';
-                
+
                 let interpretation = '';
                 if (Math.abs(ratePerDay) < 5) {
                     interpretation = '✓ Excellent timekeeping - within COSC standards (±4-6 sec/day)';
@@ -572,8 +642,12 @@
             }
 
             const snrScore = Math.min(snr / 30 * 100, 100);
-            const stabilityScore = frequencyHistory.length > 10 ? parseFloat(document.getElementById('frequencyStability').textContent) : 0;
-            const regularityScore = amplitudeHistory.length > 10 ? parseFloat(document.getElementById('tickRegularity').textContent) : 0;
+            const stabilityScore = tickRateHistory.length > 10
+                ? parseFloat(document.getElementById('frequencyStability').textContent)
+                : 0;
+            const regularityScore = amplitudeHistory.length > 10
+                ? parseFloat(document.getElementById('tickRegularity').textContent)
+                : 0;
             const overallScore = (snrScore + stabilityScore + regularityScore) / 3;
 
             let rating = '';
