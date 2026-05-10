@@ -152,6 +152,20 @@
             border-radius: 3px;
             margin: 8px 0;
         }
+        .no-ticks-warning {
+            background-color: #3d0d0d;
+            border: 2px solid #ff4444;
+            color: #ff8888;
+            padding: 16px 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .no-ticks-warning strong {
+            color: #ff4444;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -226,57 +240,60 @@
             </div>
         </div>
 
-        <div class="rate-prediction">
-            <h2>⏱️ Daily Rate Prediction</h2>
-
-            <!--
-                FIX: Previously, "measuredFreq" was the peak FFT bin frequency — whatever
-                frequency dominated the audio spectrum (e.g. mains hum, room noise).
-                Watch ticks are broadband transient clicks, NOT sinusoidal tones, so the
-                FFT peak has no relationship to tick rate.
-
-                The correct measured frequency is the tick detection rate from
-                tickCountHistory (beats/second), which is what we now display and use
-                for all deviation and rate-per-day calculations below.
-            -->
-
-            <div style="margin: 10px 0;">
-                <strong>Measured Tick Rate:</strong> <span id="measuredFreq">-- Hz</span>
-                <span style="color:#888; font-size:12px; margin-left:8px;">(from transient peak detection)</span>
-            </div>
-            <div style="margin: 10px 0;">
-                <strong>Reference Frequency (Selected):</strong> <span id="referenceFreq">-- Hz</span>
-            </div>
-            <div style="margin: 10px 0;">
-                <strong>Frequency Deviation:</strong> <span id="freqDeviation">-- Hz</span>
-            </div>
-            <div class="rate-value">
-                <span id="ratePerDay">-- sec/day</span>
-            </div>
-            <div class="rate-accuracy">
-                <strong>Daily Accuracy Range:</strong> <span id="accuracyRange">-- to --</span>
-            </div>
-            <div style="margin: 10px 0; color: #ffff00;">
-                <strong>Interpretation:</strong> <span id="rateInterpretation">Collecting data...</span>
-            </div>
+        <div id="noTicksWarning" class="no-ticks-warning" style="display: none;">
+            <strong>⚠️ No Ticks Detected</strong><br>
+            The analyzer is not picking up any watch ticks. Daily rate prediction and detailed analysis require a clear tick signal and will not be shown until ticks are reliably detected.<br><br>
+            <strong>Tips to improve detection:</strong>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                <li>Hold the watch directly against or very close to the microphone</li>
+                <li>Move to a quieter environment to reduce background noise</li>
+                <li>Check that your microphone is not muted or blocked</li>
+                <li>Try a longer sampling duration to allow auto-gain time to adjust</li>
+            </ul>
         </div>
 
-        <div class="analysis-section">
-            <h2>📊 Detailed Analysis</h2>
-            <div style="margin: 10px 0;">
-                <strong>Tick Regularity:</strong> <span id="tickRegularity">--</span>
+        <div id="ticksDetectedSections" style="display: none;">
+            <div class="rate-prediction">
+                <h2>⏱️ Daily Rate Prediction</h2>
+
+                <div style="margin: 10px 0;">
+                    <strong>Measured Tick Rate:</strong> <span id="measuredFreq">-- Hz</span>
+                    <span style="color:#888; font-size:12px; margin-left:8px;">(from transient peak detection)</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <strong>Reference Frequency (Selected):</strong> <span id="referenceFreq">-- Hz</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <strong>Frequency Deviation:</strong> <span id="freqDeviation">-- Hz</span>
+                </div>
+                <div class="rate-value">
+                    <span id="ratePerDay">-- sec/day</span>
+                </div>
+                <div class="rate-accuracy">
+                    <strong>Daily Accuracy Range:</strong> <span id="accuracyRange">-- to --</span>
+                </div>
+                <div style="margin: 10px 0; color: #ffff00;">
+                    <strong>Interpretation:</strong> <span id="rateInterpretation">Collecting data...</span>
+                </div>
             </div>
-            <div style="margin: 10px 0;">
-                <strong>Tick Rate Stability:</strong> <span id="frequencyStability">--</span>
-            </div>
-            <div style="margin: 10px 0;">
-                <strong>Signal-to-Noise Ratio:</strong> <span id="snr">-- dB</span>
-            </div>
-            <div style="margin: 10px 0;">
-                <strong>Harmonic Content:</strong> <span id="harmonicContent">--</span>
-            </div>
-            <div style="margin: 10px 0;">
-                <strong>Overall Watch Performance:</strong> <span id="overallPerformance">--</span>
+
+            <div class="analysis-section">
+                <h2>📊 Detailed Analysis</h2>
+                <div style="margin: 10px 0;">
+                    <strong>Tick Regularity:</strong> <span id="tickRegularity">--</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <strong>Tick Rate Stability:</strong> <span id="frequencyStability">--</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <strong>Signal-to-Noise Ratio:</strong> <span id="snr">-- dB</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <strong>Harmonic Content:</strong> <span id="harmonicContent">--</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <strong>Overall Watch Performance:</strong> <span id="overallPerformance">--</span>
+                </div>
             </div>
         </div>
     </div>
@@ -298,6 +315,8 @@
         let currentGain = 50;
         let currentThreshold = 0.10;
         const SECONDS_PER_DAY = 86400;
+        // Minimum average ticks/sec across recent frames to consider ticks "detected"
+        const MIN_TICK_RATE_FOR_ANALYSIS = 1.0;
 
         const startBtn = document.getElementById('startRecording');
         const samplingTimeInput = document.getElementById('samplingTime');
@@ -351,6 +370,10 @@
                 beatRateSelect.disabled = true;
                 recordingStartTime = Date.now();
                 
+                // Reset tick-detection UI state
+                document.getElementById('noTicksWarning').style.display = 'none';
+                document.getElementById('ticksDetectedSections').style.display = 'none';
+
                 statusDisplay.textContent = 'Status: 🔴 Recording...';
                 countdownDisplay.style.display = 'block';
                 autoAdjustInfo.style.display = 'block';
@@ -387,6 +410,19 @@
             statusDisplay.textContent = 'Status: ✓ Recording complete - Analysis ready';
             countdownDisplay.style.display = 'none';
             autoAdjustInfo.style.display = 'none';
+
+            // Final tick check: if we never accumulated enough history or ticks were absent,
+            // ensure the warning is shown and analysis is hidden.
+            if (tickRateHistory.length >= 10) {
+                const overallAvg = tickRateHistory.reduce((a, b) => a + b) / tickRateHistory.length;
+                const ticksDetected = overallAvg >= MIN_TICK_RATE_FOR_ANALYSIS;
+                document.getElementById('noTicksWarning').style.display = ticksDetected ? 'none' : 'block';
+                document.getElementById('ticksDetectedSections').style.display = ticksDetected ? 'block' : 'none';
+            } else {
+                // Not enough data collected at all
+                document.getElementById('noTicksWarning').style.display = 'block';
+                document.getElementById('ticksDetectedSections').style.display = 'none';
+            }
         }
 
         function visualize() {
@@ -560,6 +596,16 @@
 
             amplitudeHistory.push(maxAmplitude);
             if (amplitudeHistory.length > 100) amplitudeHistory.shift();
+
+            // Gate analysis sections on whether ticks are actually being detected.
+            // Wait until we have enough history (≥10 frames) before making a judgment,
+            // so auto-gain has had time to settle.
+            if (tickRateHistory.length >= 10) {
+                const recentAvg = tickRateHistory.slice(-10).reduce((a, b) => a + b) / 10;
+                const ticksDetected = recentAvg >= MIN_TICK_RATE_FOR_ANALYSIS;
+                document.getElementById('noTicksWarning').style.display = ticksDetected ? 'none' : 'block';
+                document.getElementById('ticksDetectedSections').style.display = ticksDetected ? 'block' : 'none';
+            }
         }
 
         function analyzePerformance(waveformData, frequencyData) {
