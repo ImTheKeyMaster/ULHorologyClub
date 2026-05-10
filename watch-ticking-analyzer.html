@@ -326,10 +326,14 @@
         const countdownTimer = document.getElementById('countdownTimer');
         const autoAdjustInfo = document.getElementById('autoAdjustInfo');
 
-        // Derive reference frequency in Hz from the selected bph value
+        // Derive reference tick frequency in Hz from the selected bph value.
+        // In watchmaking, "beats per hour" counts each individual beat (tick + tock = 2 beats).
+        // The microphone detects one audible event per full oscillation = half the beat rate.
+        // So: tick rate (Hz) = bph / 3600 / 2 = bph / 7200.
+        // Example: 28,800 bph → 28800 / 7200 = 4 Hz tick rate. ✓
         function getReferenceFrequency() {
             const bph = parseInt(beatRateSelect.value);
-            return bph / 3600; // beats per hour → beats per second (Hz)
+            return bph / 7200;
         }
 
         samplingTimeInput.addEventListener('change', () => {
@@ -572,18 +576,23 @@
             document.getElementById('noiseFloor').textContent = (Math.min(...frequencyData) / 255).toFixed(3);
 
             // --- Tick detection via transient (time-domain) peak counting ---
+            // A refractory period prevents counting the same tick's ringing waveform multiple
+            // times. A watch tick lasts ~2–5 ms; at 44100 Hz that's ~90–220 samples.
+            // We use a 50 ms gap (minGap samples) as a safe minimum between distinct ticks.
+            const minGap = Math.round(sampleRate * 0.05); // 50 ms refractory window
             let tickCount = 0;
+            let lastTickAt = -minGap;
             for (let i = 1; i < waveformData.length - 1; i++) {
                 const curr = (waveformData[i] - 128) / 128;
                 const prev = (waveformData[i-1] - 128) / 128;
                 const next = (waveformData[i+1] - 128) / 128;
-                if (curr > currentThreshold && curr > prev && curr > next) {
+                if (curr > currentThreshold && curr > prev && curr > next && (i - lastTickAt) >= minGap) {
                     tickCount++;
+                    lastTickAt = i;
                 }
             }
 
-            // FIX: ticksPerSecond is the measured beat rate in Hz.
-            // This is what must be compared to the watch's reference frequency.
+            // ticksPerSecond: how many distinct ticks occurred in this buffer, scaled to per-second
             const ticksPerSecond = (tickCount * sampleRate) / analyser.fftSize;
             document.getElementById('ticksPerSec').textContent = Math.max(0, Math.round(ticksPerSecond));
 
