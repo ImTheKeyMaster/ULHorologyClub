@@ -2,21 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <title>The Union League Horology Club</title>
   <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
   <link rel="manifest" href="/favicon/site.webmanifest" />
 
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { height:100%; font-family:'Inter',sans-serif; overflow-x:hidden; }
+    html {
+      min-height: 100%;
+      background-color: #000;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      background-color: #000;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
 
     /* FIXED BACKGROUND LAYER */
     #bg {
       position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
+      inset: 0;
       /* add a solid black fallback before the image loads */
-      background: #000 url('/images/Background2.png') center/cover no-repeat fixed;
+      background: #000 url('/images/Background2.png') center / cover no-repeat;
       z-index: 0;
     }
     #bg::before {
@@ -31,6 +45,7 @@
       position: relative;
       z-index: 1;
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       text-align: center;
@@ -215,7 +230,12 @@
         <img src="/images/card5.jpg" alt="">
         <h3>Latest Watch News</h3>
         <p>Stay current with trends, releases, and expert insights delivered daily.</p>
-        <a href="https://www.watchreport.org" class="cta-button">Watch News</a>
+        <a
+          href="https://www.watchreport.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="cta-button"
+        >Watch News</a>
       </div>
       <div class="card">
         <img src="/images/card3.jpg" alt="">
