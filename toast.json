@@ -1,30 +1,37 @@
 [
-{
-  "message": "📅 Join the fun...<br/><b>First Annual Wreck-a-Watch Event</b><br/>Get a watch and a sledgehammer<br/>🕰️<b>12:00PM Friday, March 27th at the League House</b><br/>",
-  "link": "https://www.unionleague.org/members/calendar/event/74480/2026-03-27/reserve",
-  "linkText": "Click here to sign up",
-  "startDate": "2026-03-01",
-  "endDate": "2026-03-26"
- },
-{
-  "message": "📅 Join our America250 event...<br/><b>Celebrate American Watchmaking with RGM Watches</b><br/>Speaker: Roland G. Murphy.<br/>🕰️<b>6:00PM Thursday, February 26th at the League House</b><br/>",
-  "link": "https://www.unionleague.org/members/calendar/event/71924/2026-02-26/reserve",
-  "linkText": "Click here to sign up",
-  "startDate": "2026-02-01",
-  "endDate": "2026-02-26"
- },
- {
-  "message": "📅 Join us for lunch...<br/><b>Precision Timekeeping and National Defense</b><br/>Speaker: Professor Bill Regli.<br/>🕰️<b>11:45AM Friday, November 21th at the League House</b><br/>",
-  "link": "https://member.unionleague.org/members/calendar/event/66853/2025-11-21/reserve",
-  "linkText": "Click here to sign up",
-  "startDate": "2025-11-01",
-  "endDate": "2025-11-21"
- },
- {
-  "message": "📅 Our next ULHorology event is coming soon! Join us for an evening of watch talk with <b>Jack Forster</b> from The 1916 Company.<br/>🕰️<b>6:00PM Thursday, September 25th at the League House</b><br/>",
-  "link": "https://member.unionleague.org/members/calendar/event/59917/2025-09-25",
-  "linkText": "Click here to sign up",
-  "startDate": "2025-08-01",
-  "endDate": "2025-09-25"
- }  
+  {
+    "message": "📅 Join us for an evening with <b>Eric Wind & Charlie Dunne</b> for a talk and book signing.<br/>🕰️<b>6:00PM Wednesday, December 2nd at the League House</b><br/>",
+    "link": "https://www.unionleague.org/members/calendar/event/85822/2026-12-02/reserve",
+    "linkText": "Click here to sign up",
+    "startDate": "2026-11-14",
+    "endDate": "2026-12-03"
+  },
+  {
+    "message": "📅 Join the fun...<br/><b>First Annual Wreck-a-Watch Event</b><br/>Get a watch and a sledgehammer<br/>🕰️<b>12:00PM Friday, March 27th at the League House</b><br/>",
+    "link": "https://www.unionleague.org/members/calendar/event/74480/2026-03-27/reserve",
+    "linkText": "Click here to sign up",
+    "startDate": "2026-03-01",
+    "endDate": "2026-03-26"
+  },
+  {
+    "message": "📅 Join our America250 event...<br/><b>Celebrate American Watchmaking with RGM Watches</b><br/>Speaker: Roland G. Murphy.<br/>🕰️<b>6:00PM Thursday, February 26th at the League House</b><br/>",
+    "link": "https://www.unionleague.org/members/calendar/event/71924/2026-02-26/reserve",
+    "linkText": "Click here to sign up",
+    "startDate": "2026-02-01",
+    "endDate": "2026-02-26"
+  },
+  {
+    "message": "📅 Join us for lunch...<br/><b>Precision Timekeeping and National Defense</b><br/>Speaker: Professor Bill Regli.<br/>🕰️<b>11:45AM Friday, November 21th at the League House</b><br/>",
+    "link": "https://member.unionleague.org/members/calendar/event/66853/2025-11-21/reserve",
+    "linkText": "Click here to sign up",
+    "startDate": "2025-11-01",
+    "endDate": "2025-11-21"
+  },
+  {
+    "message": "📅 Our next ULHorology event is coming soon! Join us for an evening of watch talk with <b>Jack Forster</b> from The 1916 Company.<br/>🕰️<b>6:00PM Thursday, September 25th at the League House</b><br/>",
+    "link": "https://member.unionleague.org/members/calendar/event/59917/2025-09-25",
+    "linkText": "Click here to sign up",
+    "startDate": "2025-08-01",
+    "endDate": "2025-09-25"
+  }
 ]
